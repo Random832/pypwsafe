@@ -1,1 +1,0 @@
-ALTER TABLE MemPasswordEntryHistory ENGINE=MEMORY;
