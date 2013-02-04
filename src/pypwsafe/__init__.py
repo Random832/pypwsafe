@@ -237,6 +237,7 @@ class PWSafe3(object):
             self.records = []
             # Add EOF headers
             self.headers.append(EOFHeader())
+            self.setVersion(version = 0x030C)
             self.autoUpdateHeaders()
 
     def autoUpdateHeaders(self):

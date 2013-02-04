@@ -168,6 +168,8 @@ class VersionHeader(Header):
         return "Version=%s" % hex(self.version)
 
     def serial(self):
+        if self.version is None:
+            self.version = 0x00
         return pack('=H', self.version)
 
 class UUIDHeader(Header):
