@@ -237,11 +237,11 @@ class PWSafe3(object):
             self.records = []
             # Add EOF headers
             self.headers.append(EOFHeader())
-            self.setVersion(version = 0x030C)
             self.autoUpdateHeaders()
 
     def autoUpdateHeaders(self):
         """ Set auto-set headers that should be set on save """
+        self.setVersion(version = 0x030C, updateAutoData = False)
         self.setUUID(updateAutoData = False)
         self.setLastSaveApp('pypwsafe', updateAutoData = False)
         self.setTimeStampOfLastSave(datetime.datetime.now(), updateAutoData = False)
@@ -260,7 +260,7 @@ class PWSafe3(object):
             fil.write(self.flfull)
             fil.close()
         else:
-            raise ROSafe, "Safe is not in read/write mode"
+            raise ROSafe("Safe is not in read/write mode")
 
     def serialiaze(self):
         """ Turn the in-memory objects into in-memory strings.
@@ -645,7 +645,9 @@ class PWSafe3(object):
         """ Returns the name of the db according to the psafe headers """
         if updateAutoData:
             self.autoUpdateHeaders()
-
+        
+        dbName = str(dbName)
+        
         if not _setHeaderField(self.headers, DBNameHeader, dbName):
             self.headers.insert(0, DBNameHeader(dbName = dbName))
 
@@ -657,6 +659,8 @@ class PWSafe3(object):
         """ Returns the description of the db according to the psafe headers """
         if updateAutoData:
             self.autoUpdateHeaders()
+        
+        dbDesc = str(dbDesc)
 
         if not _setHeaderField(self.headers, DBDescHeader, dbDesc):
             self.headers.insert(0, DBDescHeader(dbDesc = dbDesc))
