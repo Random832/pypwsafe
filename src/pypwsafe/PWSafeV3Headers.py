@@ -44,7 +44,7 @@ class _HeaderType(type):
     def __init__(cls, name, bases, dct):
         super(_HeaderType, cls).__init__(name, bases, dct)
         # Skip any where TYPE is none, such as the base class
-        if cls.TYPE:
+        if cls.TYPE is not None:
             # Make sure no type ids are duplicated
             assert not headers.has_key(cls.TYPE)
             headers[cls.TYPE] = cls
@@ -939,6 +939,7 @@ class EOFHeader(Header):
 
     def __str__(self):
         return "EOF"
+
 
 def Create_Header(fetchblock_f):
     """Returns a header object. Uses fetchblock_f to read a 16 byte chunk of data
