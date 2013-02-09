@@ -32,9 +32,9 @@ from errors import *
 import os
 from uuid import UUID, uuid4
 import datetime
-#logging.config.fileConfig('/etc/mss/psafe_log.conf')
+# logging.config.fileConfig('/etc/mss/psafe_log.conf')
 psafe_logger = logging.getLogger("psafe.lib.record")
-psafe_logger.setLevel(logging.DEBUG)     # FIXME: REMOVE ME
+psafe_logger.setLevel(logging.DEBUG)  # FIXME: REMOVE ME
 psafe_logger.debug('initing')
 
 RecordPropTypes = {}
@@ -86,7 +86,7 @@ class Record(object):
 
     def _if_noitem(self, item):
         """If an item isn't in our key store, create it. """
-        if not self.lk.has_key(item):
+        if item not in self.lk:
             for i in RecordPropTypes.values():
                 if i.rNAME == item:
                     r = i()
@@ -105,7 +105,7 @@ class Record(object):
     def __str__(self):
         ret = ''
         for i in self.lk.keys():
-            #print str(self.lk[i])
+            # print str(self.lk[i])
 
             ret += str(self.lk[i]) + "\n"
         return ret[:-1]
@@ -118,7 +118,7 @@ class Record(object):
         ret = ''
         for i in self.records:
             # the data field has the data minus the padding
-            #if i.serial()!=i.data:
+            # if i.serial()!=i.data:
             #    psafe_logger.warn('Serial != data for class %s. s: %s d: %s'%(repr(i.__class__),repr(i.serial()),repr(i.data)))
             ret += i.serial()
         return ret
@@ -244,9 +244,9 @@ class Record(object):
         return ret
     
     def _find_hist(self):
-        if not self.lk.has_key("PasswordHistory"):
-            self["PasswordHistory"] = dict(enabled=True,maxsize=254,history=[])
-        if self.lk.has_key("PasswordHistory"):
+        if "PasswordHistory" not in self.lk:
+            self["PasswordHistory"] = dict(enabled = True, maxsize = 254, history = [])
+        if "PasswordHistory" in self.lk:
             return self.lk['PasswordHistory']
 
     def appendHistory(self, oldpw, dt = datetime.datetime.now()):
@@ -449,7 +449,7 @@ class RecordProp(object):
     def serial(self):
         """Returns the raw data blocks to generate this object 
         EXCLUDING TYPE+LEN!"""
-        #psafe_logger.debug('Serial to %s',repr(self.data))
+        # psafe_logger.debug('Serial to %s',repr(self.data))
         return self.data
 
     def serialiaze(self):
@@ -503,7 +503,7 @@ class UUIDRecordProp(RecordProp):
             self.uuid = UUID(fields = value)
 
     def serial(self):
-        #psafe_logger.debug("Serial to %s",repr(pack('=16s',str(self.uuid.bytes))))
+        # psafe_logger.debug("Serial to %s",repr(pack('=16s',str(self.uuid.bytes))))
         return pack('=16s', str(self.uuid.bytes))
 
 class GroupRecordProp(RecordProp):
@@ -550,7 +550,7 @@ class GroupRecordProp(RecordProp):
 
     def serial(self):
         self.group_str = '.'.join(self.group)
-        #psafe_logger.debug("Serial to %s Data %s"%(repr(self.group_str),repr(self.data)))
+        # psafe_logger.debug("Serial to %s Data %s"%(repr(self.group_str),repr(self.data)))
         return self.group_str
 
 class TitleRecordProp(RecordProp):
@@ -596,7 +596,7 @@ class TitleRecordProp(RecordProp):
         self.title = str(value)
 
     def serial(self):
-        #psafe_logger.debug("Serial to %s data %s"%(repr(self.title),repr(self.data)))
+        # psafe_logger.debug("Serial to %s data %s"%(repr(self.title),repr(self.data)))
         return self.title
 
 class UsernameRecordProp(RecordProp):
@@ -641,7 +641,7 @@ class UsernameRecordProp(RecordProp):
         self.username = value
 
     def serial(self):
-        #psafe_logger.debug("Serial to %s data %s"%(repr(self.username),repr(self.data)))
+        # psafe_logger.debug("Serial to %s data %s"%(repr(self.username),repr(self.data)))
         return self.username
 
 class NotesRecordProp(RecordProp):
@@ -686,7 +686,7 @@ class NotesRecordProp(RecordProp):
         self.notes = str(value)
 
     def serial(self):
-        #psafe_logger.debug("Serial to %s data %s"%(repr(self.notes),repr(self.data)))
+        # psafe_logger.debug("Serial to %s data %s"%(repr(self.notes),repr(self.data)))
         return self.notes
 
 class PasswordRecordProp(RecordProp):
@@ -731,7 +731,7 @@ class PasswordRecordProp(RecordProp):
         self.password = str(value)
 
     def serial(self):
-        #psafe_logger.debug("Serial to %s data %s"%(repr(self.password),repr(self.data)))
+        # psafe_logger.debug("Serial to %s data %s"%(repr(self.password),repr(self.data)))
         return self.password
 
 class CreationTimeRecordProp(RecordProp):
@@ -776,7 +776,7 @@ class CreationTimeRecordProp(RecordProp):
         self.dt = value
 
     def serial(self):
-        #psafe_logger.debug("Serial to %s data %s"%(repr(makedatetime(self.dt)),repr(self.data)))
+        # psafe_logger.debug("Serial to %s data %s"%(repr(makedatetime(self.dt)),repr(self.data)))
         return makedatetime(self.dt)
 
 class ModTimeRecordProp(RecordProp):
@@ -820,7 +820,7 @@ class ModTimeRecordProp(RecordProp):
         self.dt = value
 
     def serial(self):
-        #psafe_logger.debug("Serial to %s data %s"%(repr(makedatetime(self.dt)),repr(self.data)))
+        # psafe_logger.debug("Serial to %s data %s"%(repr(makedatetime(self.dt)),repr(self.data)))
         return makedatetime(self.dt)
 
 class LastAccessTimeRecordProp(RecordProp):
@@ -866,7 +866,7 @@ class LastAccessTimeRecordProp(RecordProp):
         self.dt = value
 
     def serial(self):
-        #psafe_logger.debug("Serial to %s data %s"%(repr(makedatetime(self.dt)),repr(self.data)))
+        # psafe_logger.debug("Serial to %s data %s"%(repr(makedatetime(self.dt)),repr(self.data)))
         return makedatetime(self.dt)
 
 class PasswordExpiryTimeRecordProp(RecordProp):
@@ -910,7 +910,7 @@ class PasswordExpiryTimeRecordProp(RecordProp):
         self.dt = value
 
     def serial(self):
-        #psafe_logger.debug("Serial to %s data %s"%(repr(makedatetime(self.dt)),repr(self.data)))
+        # psafe_logger.debug("Serial to %s data %s"%(repr(makedatetime(self.dt)),repr(self.data)))
         return makedatetime(self.dt)
 
 class LastModificationTimeRecordProp(RecordProp):
@@ -955,7 +955,7 @@ class LastModificationTimeRecordProp(RecordProp):
         self.dt = value
 
     def serial(self):
-        #psafe_logger.debug("Serial to %s data %s"%(repr(makedatetime(self.dt)),repr(self.data)))
+        # psafe_logger.debug("Serial to %s data %s"%(repr(makedatetime(self.dt)),repr(self.data)))
         return makedatetime(self.dt)
 
 class URLRecordProp(RecordProp):
@@ -999,7 +999,7 @@ class URLRecordProp(RecordProp):
         self.url = str(value)
 
     def serial(self):
-        #psafe_logger.debug("Serial to %s data %s"%(repr(self.url),repr(self.data)))
+        # psafe_logger.debug("Serial to %s data %s"%(repr(self.url),repr(self.data)))
         return self.url
 
 class AutotypeRecordProp(RecordProp):
@@ -1044,7 +1044,7 @@ class AutotypeRecordProp(RecordProp):
         self.autotype = str(value)
 
     def serial(self):
-        #psafe_logger.debug("Serial to %s data %s"%(repr(self.autotype),repr(self.data)))
+        # psafe_logger.debug("Serial to %s data %s"%(repr(self.autotype),repr(self.data)))
         return self.autotype
 
 class PasswordHistoryRecordProp(RecordProp):
@@ -1114,7 +1114,7 @@ where:
             psafe_logger.debug("Post-add password %s" % repr(ret))
         if len(self.history) == 0 and self.zerohack:
             ret += "00"
-        #psafe_logger.debug("Serial to %s data %s"%(repr(ret),repr(self.data)))
+        # psafe_logger.debug("Serial to %s data %s"%(repr(ret),repr(self.data)))
         return ret
 
     def parse(self):
@@ -1186,7 +1186,7 @@ where:
     def get(self):
         hist = {}
         for (createddt, passwd) in self.history:
-            #used to return time.strftime("%a, %d %b %Y %H:%M:%S +0000",createddt)
+            # used to return time.strftime("%a, %d %b %Y %H:%M:%S +0000",createddt)
             hist[createddt] = passwd
         return dict(
             enable = self.enabled
@@ -1297,7 +1297,7 @@ where:
         if self.makepron:
             flags = flags | self.MAKEPRONOUNCEABLE
         ret = '%04x%03x%03x%03x%03x%03x' % (flags, self.ttllen, self.minlow, self.minup, self.mindig, self.minsym)
-        #psafe_logger.debug("Serial to %s data %s"%(repr(ret),repr(self.data)))    
+        # psafe_logger.debug("Serial to %s data %s"%(repr(ret),repr(self.data)))    
         return ret
 
     def parse(self):
@@ -1434,7 +1434,7 @@ this field not being set.
 
     def serial(self):
         ret = pack('=l', self.ttl)
-        #psafe_logger.debug("Serial to %s data %s"%(repr(ret),repr(self.data)))
+        # psafe_logger.debug("Serial to %s data %s"%(repr(ret),repr(self.data)))
         return ret
 
 class RunCommandRecordProp(RecordProp):
@@ -1470,7 +1470,7 @@ class RunCommandRecordProp(RecordProp):
         self.runCommand = str(value)
 
     def serial(self):
-        #psafe_logger.debug("Serial to %s data %s"%(repr(self.url),repr(self.data)))
+        # psafe_logger.debug("Serial to %s data %s"%(repr(self.url),repr(self.data)))
         return self.runCommand
 
 class DoubleClickActionRecordProp(RecordProp):
@@ -1528,7 +1528,7 @@ A two byte field contain the value of the Double-Click Action 'preference
 
     def serial(self):
         ret = pack('=H', self.action)
-        #psafe_logger.debug("Serial to %s data %s"%(repr(ret),repr(self.data)))
+        # psafe_logger.debug("Serial to %s data %s"%(repr(ret),repr(self.data)))
         return ret
 
 class EmailAddressRecordProp(RecordProp):
@@ -1565,7 +1565,7 @@ prefix. This field was introduced in version 0x0306 (PasswordSafe V3.19).
         self.emailAddress = str(value)
 
     def serial(self):
-        #psafe_logger.debug("Serial to %s data %s"%(repr(self.url),repr(self.data)))
+        # psafe_logger.debug("Serial to %s data %s"%(repr(self.url),repr(self.data)))
         return self.emailAddress
 
 class ProtectedEntryRecordProp(RecordProp):
@@ -1644,7 +1644,7 @@ set. This field is mutually exclusive with the policy name field
         self.symbols = str(value)
 
     def serial(self):
-        #psafe_logger.debug("Serial to %s data %s"%(repr(self.url),repr(self.data)))
+        # psafe_logger.debug("Serial to %s data %s"%(repr(self.url),repr(self.data)))
         return self.symbols
 
 class ShiftDoubleClickActionRecordProp(RecordProp):
@@ -1702,7 +1702,7 @@ A two byte field contain the value of the Double-Click Action 'preference
 
     def serial(self):
         ret = pack('=H', self.action)
-        #psafe_logger.debug("Serial to %s data %s"%(repr(ret),repr(self.data)))
+        # psafe_logger.debug("Serial to %s data %s"%(repr(ret),repr(self.data)))
         return ret
 
 class PasswordPolicyNameRecordProp(RecordProp):
@@ -1741,7 +1741,7 @@ symbols for password field [0x16]. This was introduced in version
         self.symbols = str(value)
 
     def serial(self):
-        #psafe_logger.debug("Serial to %s data %s"%(repr(self.url),repr(self.data)))
+        # psafe_logger.debug("Serial to %s data %s"%(repr(self.url),repr(self.data)))
         return self.symbols
 
 class EOERecordProp(RecordProp):
@@ -1804,11 +1804,11 @@ def Create_Prop(fetchblock_f):
     if rlen > len(data):
         data += fetchblock_f(((rlen - len(data) - 1) / 16) + 1)
     assert rlen <= len(data)
-    #print "Creating records with %s"%repr((rTYPE,rlen,data,len(data)))
+    # print "Creating records with %s"%repr((rTYPE,rlen,data,len(data)))
     # Lazy way to add the header data back
     # TODO: Clean up header add back
     data = firstblock[:5] + data
-    if RecordPropTypes.has_key(rTYPE):
+    if rTYPE in RecordPropTypes:
         try:
             return RecordPropTypes[rTYPE](rTYPE, rlen, data)
         except:

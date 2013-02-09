@@ -46,7 +46,7 @@ class _HeaderType(type):
         # Skip any where TYPE is none, such as the base class
         if cls.TYPE is not None:
             # Make sure no type ids are duplicated
-            assert not headers.has_key(cls.TYPE)
+            assert cls.TYPE not in headers
             headers[cls.TYPE] = cls
 
 class Header(object):
@@ -311,7 +311,7 @@ K:V for opts:
     def serial(self):
         ret = ''
         for name, value in self.opts.items():
-            if not conf_types.has_key(name):
+            if name not in conf_types:
                 raise PrefsValueError, "%r is not a valid configuration option" % name
             typ = conf_types[name]
             if type(value) != typ:
@@ -956,7 +956,7 @@ def Create_Header(fetchblock_f):
     assert rlen <= len(data)
     # TODO: Clean up header add back
     data = firstblock[:5] + data
-    if headers.has_key(rtype):
+    if rtype in headers:
         return headers[rtype](rtype, rlen, data)
     else:
         # Unknown header
