@@ -548,16 +548,16 @@ dbName        String
 
     def parse(self):
         """Parse data"""
-        self.dbName = self.data
+        self.dbName = unicode(self.data)
 
     def __repr__(self):
         return "DBName" + Header.__repr__(self)
 
     def __str__(self):
-        return "DBNameHeader(%r)" % self.dbName
+        return u'DBNameHeader(%r)' % self.dbName
 
     def serial(self):
-        return self.dbName
+        return str(self.dbName)
 
 
 class NamedPasswordPolicy(dict):
@@ -877,7 +877,7 @@ class RecentEntriesHeader(Header):
         return "RecentEntriesHeader(%r)" % self.recentEntries
 
     def serial(self):
-        return ','.join(self.recentEntries[:256])    
+        return ','.join([str(i) for i in self.recentEntries[:256]])    
 
 
 class EmptyGroupHeader(Header):
