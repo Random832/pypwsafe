@@ -70,7 +70,19 @@ class UnicodeTest_RecordLevel(TestSafeTestBase):
                 self.assertTrue(record.getUser(), "Didn't get a valid username where one should be present")
             elif record.getTitle() == 'Test Group':
                 self.assertTrue(record.getGroup(), "Didn't get a valid group where one should be present")
-            
+    
+    def test_unicode_write_db(self):
+        self.testSafeO.setDbName(u'Test Name \xe2')
+        self.testSafeO.save()
+        self.testSafeO.close()
+        from pypwsafe import PWSafe3
+        self.testSafeO = PWSafe3(
+                                 filename = self.ourTestSafe,
+                                 password = STANDARD_TEST_SAFE_PASSWORD,
+                                 mode = self.autoOpenMode,
+                                 )
+        self.assertTrue('Test Name' in self.testSafeO.getDbName(), "DB Name didn't start with correct text")
+        self.assertTrue(u'Test Name \xe2' == self.testSafeO.getDbName(), "DB Name didn't match")
     
 
 # FIXME: Add save test
