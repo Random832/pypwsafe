@@ -84,6 +84,59 @@ class UnicodeTest_RecordLevel(TestSafeTestBase):
         self.assertTrue('Test Name' in self.testSafeO.getDbName(), "DB Name didn't start with correct text")
         self.assertTrue(u'Test Name \xe2' == self.testSafeO.getDbName(), "DB Name didn't match")
     
-
-# FIXME: Add save test
-
+    def test_many_chars_db(self):
+        chrs = []
+        for i in xrange(350, 1024):
+            chrs.append(unichr(i))
+        chrs = u''.join(chrs)
+        self.testSafeO.setDbDesc(chrs)
+        self.testSafeO.save()
+        self.testSafeO.close()
+        del self.testSafeO
+        from pypwsafe import PWSafe3
+        self.testSafeO = PWSafe3(
+                                 filename = self.ourTestSafe,
+                                 password = STANDARD_TEST_SAFE_PASSWORD,
+                                 mode = self.autoOpenMode,
+                                 )
+        self.assertTrue(self.testSafeO.getDbDesc() == chrs, "Expected DB Desc to match after save")
+    
+    def test_unicode_entry_write(self):
+        chrs = []
+        for i in xrange(350, 1024):
+            chrs.append(unichr(i))
+        chrs = u''.join(chrs)
+        
+        from pypwsafe import Record
+        from uuid import uuid4
+        self.testSafeO[0] = Record()
+        self.testSafeO[0].setGroup(chrs)
+        self.testSafeO[0].setTitle(chrs)
+        self.testSafeO[0].setUsername(chrs)
+        self.testSafeO[0].setPassword(chrs)
+        self.testSafeO[0].setUUID(uuid4())
+        self.testSafeO[0].setNote(chrs)
+        self.testSafeO[0].setURL(chrs)
+        self.testSafeO[0].setEmail(chrs)
+        
+        self.testSafeO.save()
+        self.testSafeO.close()
+        del self.testSafeO
+        from pypwsafe import PWSafe3
+        self.testSafeO = PWSafe3(
+                                 filename = self.ourTestSafe,
+                                 password = STANDARD_TEST_SAFE_PASSWORD,
+                                 mode = self.autoOpenMode,
+                                 )
+        
+        self.assertEquals(self.testSafeO[0].getGroup(), chrs, "Group should match post-save")
+        self.assertEquals(self.testSafeO[0].getTitle(), chrs, "Title should match post-save")
+        self.assertEquals(self.testSafeO[0].getUsername(), chrs, "Username should match post-save")
+        self.assertEquals(self.testSafeO[0].getPassword(), chrs, "Password should match post-save")
+        self.assertTrue(self.testSafeO[0].getUUID(), "Should have an entry UUID")
+        self.assertEquals(self.testSafeO[0].getNote(), chrs, "Note should match post-save")
+        self.assertEquals(self.testSafeO[0].getURL(), chrs, "URL should match post-save")
+        self.assertEquals(self.testSafeO[0].getEmail(), chrs, "Email should match post-save")
+        
+        
+        
