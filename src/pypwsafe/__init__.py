@@ -646,7 +646,7 @@ class PWSafe3(object):
         if updateAutoData:
             self.autoUpdateHeaders()
         
-        dbName = str(dbName)
+        dbName = unicode(dbName)
         
         if not _setHeaderField(self.headers, DBNameHeader, dbName):
             self.headers.insert(0, DBNameHeader(dbName = dbName))
@@ -660,7 +660,7 @@ class PWSafe3(object):
         if updateAutoData:
             self.autoUpdateHeaders()
         
-        dbDesc = str(dbDesc)
+        dbDesc = unicode(dbDesc)
 
         if not _setHeaderField(self.headers, DBDescHeader, dbDesc):
             self.headers.insert(0, DBDescHeader(dbDesc = dbDesc))
