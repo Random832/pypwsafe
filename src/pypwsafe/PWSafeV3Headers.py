@@ -34,7 +34,7 @@ from uuid import UUID, uuid4
 from pprint import pformat
 from binascii import unhexlify
 
-# logging.config.fileConfig('/etc/mss/psafe_log.conf')
+# logging.config.fileConfig('psafe_log.conf')
 log = logging.getLogger("psafe.lib.header")
 log.debug('initing')
 
@@ -65,7 +65,7 @@ class Header(object):
     FIELD = None
 
     def __init__(self, htype, hlen, raw_data):
-        self.data = raw_data[5:(hlen + 5)]
+        self.data = str(raw_data[5:(hlen + 5)])
         self.raw_data = raw_data
         self.len = int(hlen)
         if type(self) != Header:
@@ -96,7 +96,7 @@ class Header(object):
         return self.serial()
 
     def serial(self):
-        return self.data
+        return self.data.encode('utf-8')
 
     def serialiaze(self):
         serial = self.serial()
@@ -355,7 +355,7 @@ K:V for opts:
 # Header(3,14,'00000000000000'),
 class TreeDisplayStatusHeader(Header):
     """ Tree display status (what folders are expanded/collapsed
-  
+    TODO: Needs work to complete
     """
     TYPE = 0x03
     FIELD = 'status'
@@ -432,7 +432,7 @@ class WhoLastSavedHeader(Header):
 
     def parse(self):
         """Parse data"""
-        self.username = self.data
+        self.username = self.data.decode('utf-8')
 
     def __repr__(self):
         return "LastSave" + Header.__repr__(self)
@@ -441,7 +441,7 @@ class WhoLastSavedHeader(Header):
         return "LastSaveUser(%r)" % self.username
 
     def serial(self):
-        return self.username
+        return self.username.encode('utf-8')
 
 
 # Header(6,19,'Password Safe V3.23'),
@@ -462,7 +462,7 @@ lastSaveApp        string        Last saved by this app
 
     def parse(self):
         """Parse data"""
-        self.lastSaveApp = self.data
+        self.lastSaveApp = self.data.decode('utf-8')
 
     def __repr__(self):
         return "LastSaveApp" + Header.__repr__(self)
@@ -471,7 +471,7 @@ lastSaveApp        string        Last saved by this app
         return "LastSaveAppHeader=%r" % self.lastSaveApp
 
     def serial(self):
-        return self.lastSaveApp
+        return self.lastSaveApp.encode('utf-8')
 
 # Header(7,6,'owenst'),
 class LastSaveUserHeader(Header):
@@ -491,7 +491,7 @@ username    string
 
     def parse(self):
         """Parse data"""
-        self.username = self.data
+        self.username = self.data.decode('utf-8')
 
     def __repr__(self):
         return "LastSaveUser" + Header.__repr__(self)
@@ -500,7 +500,7 @@ username    string
         return "LastSaveUserHeader(%r)" % self.username
 
     def serial(self):
-        return self.username
+        return self.username.encode('utf-8')
 
 # Header(8,15,'SOMEHOSTNAME'),
 class LastSaveHostHeader(Header):
@@ -520,7 +520,7 @@ hostname    string
 
     def parse(self):
         """Parse data"""
-        self.hostname = self.data
+        self.hostname = self.data.decode('utf-8')
 
     def __repr__(self):
         return "LastSaveHost" + Header.__repr__(self)
@@ -529,7 +529,7 @@ hostname    string
         return "LastSaveHostHeader(%r)" % self.hostname
 
     def serial(self):
-        return self.hostname
+        return self.hostname.encode('utf-8')
 
 class DBNameHeader(Header):
     """ Name of the database
@@ -548,7 +548,7 @@ dbName        String
 
     def parse(self):
         """Parse data"""
-        self.dbName = unicode(self.data)
+        self.dbName = self.data.decode('utf-8')
 
     def __repr__(self):
         return "DBName" + Header.__repr__(self)
@@ -557,7 +557,7 @@ dbName        String
         return u'DBNameHeader(%r)' % self.dbName
 
     def serial(self):
-        return str(self.dbName)
+        return self.dbName.encode('utf-8')
 
 
 class NamedPasswordPolicy(dict):
@@ -657,7 +657,7 @@ class NamedPasswordPoliciesHeader(Header):
                 log.warn("More record data than expected")
             nameLen = int(unpack('=2s', left[:2])[0], 16)
             left = left[2:]
-            name = left[:nameLen]
+            name = left[:nameLen].decode('utf-8')
             log.debug("Name len: %r Name: %r", nameLen, name)
             left = left[nameLen:]
             policy = unpack('=4s3s3s3s3s3s2s', left[:21])
@@ -753,9 +753,10 @@ class NamedPasswordPoliciesHeader(Header):
                 allowedSpecialSymbols = ''
             else:
                 allowedSpecialSymbols = policy.allowedSpecialSymbols
+            name = policy.name.encode('utf-8')
             ret += '%02x%s%04x%03x%03x%03x%03x%03x%s' % (
-                                                       len(policy.name),
-                                                       policy.name,
+                                                       len(name),
+                                                       name,
                                                        flags,
                                                        policy.minTotalLength,
                                                        policy.minLowercaseCharCount,
@@ -786,7 +787,7 @@ dbDesc        String
 
     def parse(self):
         """Parse data"""
-        self.dbDesc = self.data
+        self.dbDesc = self.data.decode('utf-8')
 
     def __repr__(self):
         return "DBDesc" + Header.__repr__(self)
@@ -795,7 +796,7 @@ dbDesc        String
         return "DBDescHeader(%r)" % self.dbDesc
 
     def serial(self):
-        return self.dbDesc
+        return self.dbDesc.encode('utf-8')
 
 
 class DBFiltersHeader(Header):
@@ -820,7 +821,7 @@ format version 0x0305.
 
     def parse(self):
         """Parse data"""
-        self.dbFilter = self.data
+        self.dbFilter = self.data.decode('utf-8')
 
     def __repr__(self):
         return "DBFilters" + Header.__repr__(self)
@@ -829,7 +830,7 @@ format version 0x0305.
         return "DBFiltersHeader(%r)" % self.dbFilter
 
     def serial(self):
-        return self.dbFilter
+        return self.dbFilter.encode('utf-8')
     
 
 class RecentEntriesHeader(Header):
@@ -877,7 +878,7 @@ class RecentEntriesHeader(Header):
         return "RecentEntriesHeader(%r)" % self.recentEntries
 
     def serial(self):
-        return ','.join([str(i) for i in self.recentEntries[:256]])    
+        return ''.join([str(i.hex) for i in self.recentEntries[:256]])    
 
 
 class EmptyGroupHeader(Header):
@@ -901,7 +902,7 @@ multiple times.
 
     def parse(self):
         """Parse data"""
-        self.groupName = self.data
+        self.groupName = self.data.decode('utf-8')
 
     def __repr__(self):
         return "EmptyGroup" + Header.__repr__(self)
@@ -910,7 +911,7 @@ multiple times.
         return "EmptyGroupHeader(%r)" % self.groupName
 
     def serial(self):
-        return self.groupName
+        return self.groupName.encode('utf-8')
 
 
 class EOFHeader(Header):
