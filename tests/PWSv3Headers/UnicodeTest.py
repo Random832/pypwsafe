@@ -84,6 +84,7 @@ class UnicodeTest_RecordLevel(TestSafeTestBase):
         self.assertTrue('Test Name' in self.testSafeO.getDbName(), "DB Name didn't start with correct text")
         self.assertTrue(u'Test Name \xe2' == self.testSafeO.getDbName(), "DB Name didn't match")
     
+    
     def test_many_chars_db(self):
         chrs = []
         for i in xrange(350, 350 + 2048):
@@ -101,6 +102,7 @@ class UnicodeTest_RecordLevel(TestSafeTestBase):
                                  )
         self.assertTrue(self.testSafeO.getDbDesc() == chrs, "Expected DB Desc to match after save")
     
+    
     def test_unicode_entry_write(self):
         chrs = []
         for i in xrange(350, 350 + 100):
@@ -109,7 +111,7 @@ class UnicodeTest_RecordLevel(TestSafeTestBase):
         
         from pypwsafe import Record
         from uuid import uuid4
-        self.testSafeO[-1] = Record()
+        self.testSafeO.records.append(Record())
         self.testSafeO[-1].setGroup([chrs, ])
         self.testSafeO[-1].setTitle(chrs)
         self.testSafeO[-1].setUsername(chrs)
