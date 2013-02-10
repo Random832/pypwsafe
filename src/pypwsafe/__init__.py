@@ -26,10 +26,11 @@
 # Lets this lib work from both 2.4 and above
 try:
     from hashlib import sha256_func  # @UnresolvedImport
-    from hashlib import sha256_mod  # @UnresolvedImport
 except:
-    import Crypto.Hash.SHA256 as sha256_mod  # @UnresolvedImport @Reimport
-    from Crypto.Hash.SHA256 import new as sha256_func  # @UnresolvedImport @Reimport
+    try:
+        from hashlib import sha256 as sha256_func  # @Reimport
+    except:
+        from Crypto.Hash.SHA256 import new as sha256_func  # @UnresolvedImport @Reimport
 from mcrypt import MCRYPT  # @UnresolvedImport
 from hmac import new as HMAC
 from PWSafeV3Headers import *
@@ -457,7 +458,7 @@ class PWSafe3(object):
             log.debug("Adding hmac data %r from %r" % (i.hmac_data(), i.__class__.__name__))
             data += i.hmac_data()
         log.debug("Building hmac with key %s", repr(self.hshkey))
-        hm = HMAC(self.hshkey, data, sha256_mod)
+        hm = HMAC(self.hshkey, data, sha256_func)
         # print hm.hexdigest()
         log.debug("HMAC %s-%s", repr(hm.hexdigest()), repr(hm.digest()))
         return hm.digest()

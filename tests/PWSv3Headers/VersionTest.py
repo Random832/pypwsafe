@@ -61,7 +61,7 @@ class VersionTest_RecordLevel(TestSafeTestBase):
     autoOpenMode = "RW"
     
     def test_read(self):
-        self.assertTrue(self.testSafeO.getVersion() is None, "Given safe shouldn't have a version")
+        self.assertTrue(self.testSafeO.getVersion() is not None, "Given safe shouldn't have a version")
         # self.assertTrue(self.testSafeO.getVersionPretty(), "Couldn't get the pretty version")
     
     def test_pretty_write(self):
