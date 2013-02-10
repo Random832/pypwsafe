@@ -860,7 +860,8 @@ class RecentEntriesHeader(Header):
         """Parse data"""
         LEN = 32
         left = self.data
-        assert len(left) % LEN == 0
+        log.error("Len left: %d: %r" % (len(left), left))
+        assert (len(left) - 2) % LEN == 0
         self.recentEntries = []
         while len(left) >= LEN:
             segement = left[:LEN]
@@ -878,7 +879,7 @@ class RecentEntriesHeader(Header):
         return "RecentEntriesHeader(%r)" % self.recentEntries
 
     def serial(self):
-        return ''.join([str(i.hex) for i in self.recentEntries[:256]])    
+        return "%02x" % len(self.recentEntries) + ''.join([str(i.hex) for i in self.recentEntries[:256]])    
 
 
 class EmptyGroupHeader(Header):

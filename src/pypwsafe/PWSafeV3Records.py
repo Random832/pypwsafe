@@ -109,7 +109,15 @@ class Record(object):
 
             ret += str(self.lk[i]) + "\n"
         return ret[:-1]
+    
+    def __unicode__(self):
+        ret = u''
+        for i in self.lk.keys():
+            # print str(self.lk[i])
 
+            ret += unicode(self.lk[i]) + "\n"
+        return ret[:-1]
+        
     def __len__(self):
         return len(self.records)
 
@@ -403,15 +411,15 @@ class RecordProp(object):
         else:
             self.rTYPE = ptype
         self.len = plen
-        self.raw_data = pdata
-        self.data = pdata[5:(plen + 5)]
+        self.raw_data = str(pdata)
+        self.data = str(pdata[5:(plen + 5)])
         psafe_logger.debug('Created psafe record prop with rTYPE of %s. Class %s', repr(self.rTYPE), repr(self.__class__))
         self.parse()
         if self.rNAME == "Unknown":
             psafe_logger.debug('Created psafe record prop of unknown type. rType: %s rLen: %s Data: %s Raw: %s', repr(ptype), repr(plen), repr(self.data), repr(self.raw_data))
         else:
             psafe_logger.debug('Created psafe record prop of known type. rType: %s rLen: %s Data: %s Raw: %s', repr(ptype), repr(plen), repr(self.data), repr(self.raw_data))
-
+        
     def parse(self):
         """Override me. Called on init to parse received data. """
         pass
@@ -424,10 +432,10 @@ class RecordProp(object):
         return self.__repr__()
 
     def get(self):
-        return self.data
+        return self.data.decode('utf-8')
 
     def set(self, value):
-        self.data = value
+        self.data = value.encode('utf-8')
 
     def _rand_char(self):
         """Returns a random char"""
@@ -497,10 +505,10 @@ class UUIDRecordProp(RecordProp):
     def set(self, value):
         """Accepts a UUID object or a hex string
         """
-        if type(value) == UUID:
+        if isinstance(value, UUID):
             self.uuid = value
         else:
-            self.uuid = UUID(fields = value)
+            self.uuid = UUID(bytes = value)
 
     def serial(self):
         # psafe_logger.debug("Serial to %s",repr(pack('=16s',str(self.uuid.bytes))))
@@ -508,8 +516,8 @@ class UUIDRecordProp(RecordProp):
 
 class GroupRecordProp(RecordProp):
     """Record's Group
-    group_str    string        Raw group string
-    group        [string]    List of the groups. First entry is the top level group.
+    group_str    unicode      Raw group string
+    group        [unicode]    List of the groups. First entry is the top level group.
 >>> x=GroupRecordProp(0x2,7,'\x07\x00\x00\x00\x02Group 0\x11"\xf1\x84')
 >>> str(x)
 "Group: 'Group 0'"
@@ -533,8 +541,10 @@ class GroupRecordProp(RecordProp):
             RecordProp.__init__(self, ptype, plen, pdata)
 
     def parse(self):
-        self.group_str = self.data
-        self.group = self.group_str.split('.')
+        self.group_str = self.data.decode('utf-8')
+        psafe_logger.debug('Group (str): %r', self.group_str)
+        self.group = self.group_str.split(u'.')
+        psafe_logger.debug('Group (List): %r', self.group)
 
     def __repr__(self):
         return "Group" + RecordProp.__repr__(self)
@@ -546,10 +556,10 @@ class GroupRecordProp(RecordProp):
         return self.group
 
     def set(self, value):
-        self.group = value
+        self.group = list(value)
 
     def serial(self):
-        self.group_str = '.'.join(self.group)
+        self.group_str = '.'.join([grp.encode('utf-8') for grp in self.group])
         # psafe_logger.debug("Serial to %s Data %s"%(repr(self.group_str),repr(self.data)))
         return self.group_str
 
@@ -581,7 +591,7 @@ class TitleRecordProp(RecordProp):
             RecordProp.__init__(self, ptype, plen, pdata)
 
     def parse(self):
-        self.title = self.data[:self.len]
+        self.title = self.data[:self.len].decode('utf-8')
 
     def __repr__(self):
         return "Title" + RecordProp.__repr__(self)
@@ -593,11 +603,11 @@ class TitleRecordProp(RecordProp):
         return self.title
 
     def set(self, value):
-        self.title = str(value)
+        self.title = unicode(value)
 
     def serial(self):
         # psafe_logger.debug("Serial to %s data %s"%(repr(self.title),repr(self.data)))
-        return self.title
+        return self.title.encode('utf-8')
 
 class UsernameRecordProp(RecordProp):
     """Record's username
@@ -626,7 +636,7 @@ class UsernameRecordProp(RecordProp):
             RecordProp.__init__(self, ptype, plen, pdata)
 
     def parse(self):
-        self.username = self.data[:self.len]
+        self.username = self.data[:self.len].decode('utf-8')
 
     def __repr__(self):
         return "Username" + RecordProp.__repr__(self)
@@ -638,11 +648,11 @@ class UsernameRecordProp(RecordProp):
         return self.username
 
     def set(self, value):
-        self.username = value
+        self.username = unicode(value)
 
     def serial(self):
         # psafe_logger.debug("Serial to %s data %s"%(repr(self.username),repr(self.data)))
-        return self.username
+        return self.username.encode('utf-8')
 
 class NotesRecordProp(RecordProp):
     """Record notes
@@ -671,7 +681,7 @@ class NotesRecordProp(RecordProp):
             RecordProp.__init__(self, ptype, plen, pdata)
 
     def parse(self):
-        self.notes = self.data[:self.len]
+        self.notes = self.data[:self.len].decode('utf-8')
 
     def __repr__(self):
         return "Notes" + RecordProp.__repr__(self)
@@ -683,11 +693,11 @@ class NotesRecordProp(RecordProp):
         return self.notes
 
     def set(self, value):
-        self.notes = str(value)
+        self.notes = unicode(value)
 
     def serial(self):
         # psafe_logger.debug("Serial to %s data %s"%(repr(self.notes),repr(self.data)))
-        return self.notes
+        return self.notes.encode('utf-8')
 
 class PasswordRecordProp(RecordProp):
     """Record's  password
@@ -716,7 +726,7 @@ class PasswordRecordProp(RecordProp):
 
     # TODO: Add handling for links. See formatv3 3.3[3]
     def parse(self):
-        self.password = self.data[:self.len]
+        self.password = self.data[:self.len].decode('utf-8')
 
     def __repr__(self):
         return "Password" + RecordProp.__repr__(self)
@@ -728,11 +738,11 @@ class PasswordRecordProp(RecordProp):
         return self.password
 
     def set(self, value):
-        self.password = str(value)
+        self.password = unicode(value)
 
     def serial(self):
         # psafe_logger.debug("Serial to %s data %s"%(repr(self.password),repr(self.data)))
-        return self.password
+        return self.password.encode('utf-8')
 
 class CreationTimeRecordProp(RecordProp):
     """Record's  ctime
@@ -984,7 +994,7 @@ class URLRecordProp(RecordProp):
             RecordProp.__init__(self, ptype, plen, pdata)
 
     def parse(self):
-        self.url = self.data[:self.len]
+        self.url = self.data[:self.len].decode('utf-8')
 
     def __repr__(self):
         return 'URL' + RecordProp.__repr__(self)
@@ -996,11 +1006,11 @@ class URLRecordProp(RecordProp):
         return self.url
 
     def set(self, value):
-        self.url = str(value)
+        self.url = unicode(value)
 
     def serial(self):
         # psafe_logger.debug("Serial to %s data %s"%(repr(self.url),repr(self.data)))
-        return self.url
+        return self.url.encode('utf-8')
 
 class AutotypeRecordProp(RecordProp):
     """Record's title
@@ -1029,7 +1039,7 @@ class AutotypeRecordProp(RecordProp):
             RecordProp.__init__(self, ptype, plen, pdata)
 
     def parse(self):
-        self.autotype = self.data[:self.len]
+        self.autotype = self.data[:self.len].decode('utf-8')
 
     def __repr__(self):
         return "Autotype" + RecordProp.__repr__(self)
@@ -1041,11 +1051,11 @@ class AutotypeRecordProp(RecordProp):
         return self.autotype
 
     def set(self, value):
-        self.autotype = str(value)
+        self.autotype = unicode(value)
 
     def serial(self):
         # psafe_logger.debug("Serial to %s data %s"%(repr(self.autotype),repr(self.data)))
-        return self.autotype
+        return self.autotype.encode('utf-8')
 
 class PasswordHistoryRecordProp(RecordProp):
     """Record's old passwords
@@ -1108,6 +1118,7 @@ where:
         ret += "%02x" % len(self.history)
         psafe_logger.debug("Pre-passwords %s" % repr(ret))
         for (tm, passwd) in self.history:
+            passwd = passwd.encode('utf-8')
             ret += "%08x" % calendar.timegm(tm)
             ret += "%04x" % len(passwd)
             ret += passwd
@@ -1129,8 +1140,8 @@ where:
             elif self.data[0] == "1":
                 self.enabled = True
             else:
-                raise PropParsingError, "Invalid enabled/disabled flag %s" % repr(self.data[0])
-            psafe_logger.debug("Set password history to %s", repr(self.enabled))
+                raise PropParsingError("Invalid enabled/disabled flag %s" % repr(self.data[0]))
+            psafe_logger.debug("Set password history to %r", self.enabled)
             # Max size of hist list
             try:
                 self.maxsize = int(self.data[1:3], 16)
@@ -1162,7 +1173,7 @@ where:
                     # TODO: Check for errors
                     tm = time.gmtime(int(tm_raw, 16))
                     len_real = int(len_raw, 16)
-                    password = data[:len_real]
+                    password = data[:len_real].decode('utf-8')
                     data = data[len_real:]
                     self.history.append((tm, password))
             except ValueError:
@@ -1200,7 +1211,7 @@ where:
         self.maxsize = value['maxsize']
         self.history = []
         for (dt, passwd) in value['history']:
-            self.history.append((dt, passwd))
+            self.history.append((dt, unicode(passwd)))
 
 class PasswordPolicyRecordProp(RecordProp):
     """Record's title
@@ -1455,7 +1466,7 @@ class RunCommandRecordProp(RecordProp):
             RecordProp.__init__(self, ptype, plen, pdata)
 
     def parse(self):
-        self.runCommand = self.data[:self.len]
+        self.runCommand = self.data[:self.len].decode('utf-8')
 
     def __repr__(self):
         return 'RunCommand' + RecordProp.__repr__(self)
@@ -1467,11 +1478,11 @@ class RunCommandRecordProp(RecordProp):
         return self.runCommand
 
     def set(self, value):
-        self.runCommand = str(value)
+        self.runCommand = unicode(value)
 
     def serial(self):
         # psafe_logger.debug("Serial to %s data %s"%(repr(self.url),repr(self.data)))
-        return self.runCommand
+        return self.runCommand.encode('utf-8')
 
 class DoubleClickActionRecordProp(RecordProp):
     """ Double click action 
@@ -1550,7 +1561,7 @@ prefix. This field was introduced in version 0x0306 (PasswordSafe V3.19).
             RecordProp.__init__(self, ptype, plen, pdata)
 
     def parse(self):
-        self.emailAddress = self.data[:self.len]
+        self.emailAddress = self.data[:self.len].decode('utf-8')
 
     def __repr__(self):
         return self.rNAME + RecordProp.__repr__(self)
@@ -1562,11 +1573,11 @@ prefix. This field was introduced in version 0x0306 (PasswordSafe V3.19).
         return self.emailAddress
 
     def set(self, value):
-        self.emailAddress = str(value)
+        self.emailAddress = unicode(value)
 
     def serial(self):
         # psafe_logger.debug("Serial to %s data %s"%(repr(self.url),repr(self.data)))
-        return self.emailAddress
+        return self.emailAddress.encode('utf-8')
 
 class ProtectedEntryRecordProp(RecordProp):
     """ Is the entry protected from being changed/deleted. 
@@ -1629,7 +1640,7 @@ set. This field is mutually exclusive with the policy name field
             RecordProp.__init__(self, ptype, plen, pdata)
 
     def parse(self):
-        self.symbols = self.data[:self.len]
+        self.symbols = self.data[:self.len].decode('utf-8')
 
     def __repr__(self):
         return self.rNAME + RecordProp.__repr__(self)
@@ -1641,11 +1652,11 @@ set. This field is mutually exclusive with the policy name field
         return self.symbols
 
     def set(self, value):
-        self.symbols = str(value)
+        self.symbols = unicode(value)
 
     def serial(self):
         # psafe_logger.debug("Serial to %s data %s"%(repr(self.url),repr(self.data)))
-        return self.symbols
+        return self.symbols.encode('utf-8')
 
 class ShiftDoubleClickActionRecordProp(RecordProp):
     """ Shift Double click action 
@@ -1726,7 +1737,7 @@ symbols for password field [0x16]. This was introduced in version
             RecordProp.__init__(self, ptype, plen, pdata)
 
     def parse(self):
-        self.symbols = self.data[:self.len]
+        self.symbols = self.data[:self.len].decode('utf-8')
 
     def __repr__(self):
         return self.rNAME + RecordProp.__repr__(self)
@@ -1738,11 +1749,11 @@ symbols for password field [0x16]. This was introduced in version
         return self.symbols
 
     def set(self, value):
-        self.symbols = str(value)
+        self.symbols = unicode(value)
 
     def serial(self):
         # psafe_logger.debug("Serial to %s data %s"%(repr(self.url),repr(self.data)))
-        return self.symbols
+        return self.symbols.encode('utf-8')
 
 class EOERecordProp(RecordProp):
     """End of entry

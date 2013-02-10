@@ -86,7 +86,7 @@ class UnicodeTest_RecordLevel(TestSafeTestBase):
     
     def test_many_chars_db(self):
         chrs = []
-        for i in xrange(350, 1024):
+        for i in xrange(350, 350 + 2048):
             chrs.append(unichr(i))
         chrs = u''.join(chrs)
         self.testSafeO.setDbDesc(chrs)
@@ -103,25 +103,26 @@ class UnicodeTest_RecordLevel(TestSafeTestBase):
     
     def test_unicode_entry_write(self):
         chrs = []
-        for i in xrange(350, 1024):
+        for i in xrange(350, 350 + 100):
             chrs.append(unichr(i))
         chrs = u''.join(chrs)
         
         from pypwsafe import Record
         from uuid import uuid4
-        self.testSafeO[0] = Record()
-        self.testSafeO[0].setGroup(chrs)
-        self.testSafeO[0].setTitle(chrs)
-        self.testSafeO[0].setUsername(chrs)
-        self.testSafeO[0].setPassword(chrs)
-        self.testSafeO[0].setUUID(uuid4())
-        self.testSafeO[0].setNote(chrs)
-        self.testSafeO[0].setURL(chrs)
-        self.testSafeO[0].setEmail(chrs)
+        self.testSafeO[-1] = Record()
+        self.testSafeO[-1].setGroup([chrs, ])
+        self.testSafeO[-1].setTitle(chrs)
+        self.testSafeO[-1].setUsername(chrs)
+        self.testSafeO[-1].setPassword(chrs)
+        self.testSafeO[-1].setUUID(uuid4())
+        self.testSafeO[-1].setNote(chrs)
+        self.testSafeO[-1].setURL(chrs)
+        self.testSafeO[-1].setEmail(chrs)
         
         self.testSafeO.save()
         self.testSafeO.close()
         del self.testSafeO
+        
         from pypwsafe import PWSafe3
         self.testSafeO = PWSafe3(
                                  filename = self.ourTestSafe,
@@ -129,14 +130,14 @@ class UnicodeTest_RecordLevel(TestSafeTestBase):
                                  mode = self.autoOpenMode,
                                  )
         
-        self.assertEquals(self.testSafeO[0].getGroup(), chrs, "Group should match post-save")
-        self.assertEquals(self.testSafeO[0].getTitle(), chrs, "Title should match post-save")
-        self.assertEquals(self.testSafeO[0].getUsername(), chrs, "Username should match post-save")
-        self.assertEquals(self.testSafeO[0].getPassword(), chrs, "Password should match post-save")
-        self.assertTrue(self.testSafeO[0].getUUID(), "Should have an entry UUID")
-        self.assertEquals(self.testSafeO[0].getNote(), chrs, "Note should match post-save")
-        self.assertEquals(self.testSafeO[0].getURL(), chrs, "URL should match post-save")
-        self.assertEquals(self.testSafeO[0].getEmail(), chrs, "Email should match post-save")
+        self.assertEquals(self.testSafeO[-1].getGroup()[0], chrs, "Group should match post-save (pre: %r post: %r)" % (chrs, self.testSafeO[-1].getGroup()))
+        self.assertEquals(self.testSafeO[-1].getTitle(), chrs, "Title should match post-save")
+        self.assertEquals(self.testSafeO[-1].getUsername(), chrs, "Username should match post-save")
+        self.assertEquals(self.testSafeO[-1].getPassword(), chrs, "Password should match post-save")
+        self.assertTrue(self.testSafeO[-1].getUUID(), "Should have an entry UUID")
+        self.assertEquals(self.testSafeO[-1].getNote(), chrs, "Note should match post-save")
+        self.assertEquals(self.testSafeO[-1].getURL(), chrs, "URL should match post-save")
+        self.assertEquals(self.testSafeO[-1].getEmail(), chrs, "Email should match post-save")
         
         
         
