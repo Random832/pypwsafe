@@ -174,6 +174,7 @@ class PWSafe3(object):
         """
         log.debug('Creating psafe %s' % repr(filename))
         self.locked = False
+        self.fl = None
         filename = os.path.realpath(filename)
         psafe_exists = os.access(filename, os.F_OK)
         psafe_canwrite = os.access(filename, os.W_OK)
@@ -474,8 +475,9 @@ class PWSafe3(object):
         self.pprime = stretchkey(self.password, self.salt, self.iter)
 
     def close(self):
-        """Close out open file"""
-        self.fl.close()
+        """ Close out open file """
+        if self.fl:
+            self.fl.close()
 
     def __del__(self):
         try:
