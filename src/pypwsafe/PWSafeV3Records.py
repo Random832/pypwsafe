@@ -1163,7 +1163,7 @@ where:
                 data = self.data[5:]
                 self.history = []
                 i = self._cursize
-                while len(data) > 12 and i > 0:
+                while len(data) >= 12 and i >= 0:
                     i -= 1
                     # Split out the data
                     tm_raw = data[:8]
@@ -1177,8 +1177,8 @@ where:
                     data = data[len_real:]
                     self.history.append((tm, password))
             except ValueError:
-                raise PropParsingError, "Error parsing password history"
-            assert self._cursize == len(self.history)
+                raise PropParsingError("Error parsing password history")
+            assert self._cursize == len(self.history), "Expected %d==len(%r)" % (self._cursize, self.history)
 
     def __repr__(self):
         return self.rNAME + RecordProp.__repr__(self)

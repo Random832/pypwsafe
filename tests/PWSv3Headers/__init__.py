@@ -29,3 +29,5 @@ from NonDefaultPrefsTest import *
 from EmptyGroupsTest import *
 from VersionTest import *
 from UnicodeTest import *
+from PasswordHistoryTest import *
+
