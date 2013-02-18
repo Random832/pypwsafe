@@ -11,7 +11,7 @@ import logging
 class SHA256(object):
     def __init__(self,data=None):
         self.log = logging.getLogger("psafe.lib.crypt.%s"%type(self).__name__)
-        self.log.debug('initing')
+        self.log.log(5,'initing')
         
         try:
             from hashlib import sha256 as sha256_func
@@ -20,7 +20,7 @@ class SHA256(object):
         except Exception,e:
             self.log.warn("Failed to import FIXME libs with %r",e)
             try:
-                from hashlib import sha256_func #@UnresolvedImport
+                from hashlib import sha256_func #@UnresolvedImport @Reimport
                 self.hsh=sha256_func()
                 self.mode="Python 2.5" # FIXME: Validate
             except Exception,e:
@@ -208,9 +208,9 @@ class TwofishCBCDecryption(object):
         except Exception,e:
             self.log.warn("Failed to import native Twofish implementation with %r"%e)
             self.log.debug("Falling back to pure-Python Twofish library")
-            from twofishcbc import TwofishCBCEncryption
+            from twofishcbc import TwofishCBCDecryption
             self.mode = 'Pure-Python'
-            self.twf = TwofishCBCEncryption(self.key,self.iv)
+            self.twf = TwofishCBCDecryption(self.key,self.iv)
     
     def decrypt(self,block):
         return self.twf.decrypt(block)
