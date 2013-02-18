@@ -8,11 +8,50 @@ Created on Feb 18, 2013
 import logging
 
 
+class SHA256(object):
+    def __init__(self,data=None):
+        self.log = logging.getLogger("psafe.lib.crypt.%s"%type(self).__name__)
+        self.log.debug('initing')
+        
+        try:
+            from hashlib import sha256 as sha256_func
+            self.hsh=sha256_func()
+            self.mode="Python 2.6"
+        except Exception,e:
+            self.log.warn("Failed to import FIXME libs with %r",e)
+            try:
+                from hashlib import sha256_func #@UnresolvedImport
+                self.hsh=sha256_func()
+                self.mode="Python 2.5" # FIXME: Validate
+            except Exception,e:
+                self.log.warn("Failed to import FIXME libs with %r",e)
+                try:
+                    from Crypto.Hash.SHA256 import new as sha256_func  # @UnresolvedImport @Reimport
+                    self.hsh=sha256_func()
+                    self.mode="Python 2.4" # FIXME: Validate
+                except Exception,e:
+                    self.log.warn("Failed to import FIXME libs with %r",e)
+                    raise ImportError("Failed to find a valid SHA256 library")
+    
+    def update(self,data):
+        return self.hsh.update(data)
+    
+    def digest(self):
+        return self.hsh.digest()
+    
+    def hexdigest(self):
+        return self.hsh.hexdigest()
+
+
 class SHA256HMAC(object):
     def __init__(self,key,data):
         self.mode=None
         self.key=key
         self.data=data
+        
+        self.log = logging.getLogger("psafe.lib.crypt.%s"%type(self).__name__)
+        self.log.debug('initing')
+        
         self.python26()
         if not self.mode:
             self.python24()
@@ -64,7 +103,7 @@ class SHA256HMAC(object):
 
 class TwofishECBCEncryption(object):
     def __init__(self,key):
-        self.log = logging.getLogger("twofish.ecb.%s"%type(self).__name__)
+        self.log = logging.getLogger("psafe.lib.crypt.%s"%type(self).__name__)
         self.log.debug('initing')
         
         self.key=key
@@ -90,7 +129,7 @@ class TwofishECBCEncryption(object):
 
 class TwofishECBCDecryption(object):
     def __init__(self,key):
-        self.log = logging.getLogger("twofish.ecb.%s"%type(self).__name__)
+        self.log = logging.getLogger("psafe.lib.crypt.%s"%type(self).__name__)
         self.log.debug('initing')
         
         self.key=key
@@ -116,7 +155,7 @@ class TwofishECBCDecryption(object):
 
 class TwofishCBCEncryption(object):
     def __init__(self,key,iv):
-        self.log = logging.getLogger("twofish.cbc.%s"%type(self).__name__)
+        self.log = logging.getLogger("psafe.lib.crypt.%s"%type(self).__name__)
         self.log.debug('initing')
         
         self.key=key
@@ -143,7 +182,7 @@ class TwofishCBCEncryption(object):
 
 class TwofishCBCDecryption(object):
     def __init__(self,key,iv):
-        self.log = logging.getLogger("twofish.cbc.%s"%type(self).__name__)
+        self.log = logging.getLogger("psafe.lib.crypt.%s"%type(self).__name__)
         self.log.debug('initing')
         
         self.key=key
