@@ -68,6 +68,15 @@ class SHA256HMAC(object):
             return self.hmac.digest()
         elif self.mode=='Python ???':
             return self.hmac.digest()
+        
+    def hexdigest(self):
+        # All the same...for now....
+        if self.mode=='Python 2.6':
+            return self.hmac.hexdigest()
+        elif self.mode=='Python 2.4':
+            return self.hmac.hexdigest()
+        elif self.mode=='Python ???':
+            return self.hmac.hexdigest()
     
     def pythonSomething(self):
         try:
