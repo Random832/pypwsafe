@@ -23,29 +23,23 @@
 @license: GPLv2
 @version: 0.3
 """
-# Lets this lib work from both 2.4 and above
-try:
-    from hashlib import sha256_func  # @UnresolvedImport
-except:
-    try:
-        from hashlib import sha256 as sha256_func  # @Reimport
-    except:
-        from Crypto.Hash.SHA256 import new as sha256_func  # @UnresolvedImport @Reimport
-from mcrypt import MCRYPT  # @UnresolvedImport
-from hmac import new as HMAC
-from PWSafeV3Headers import *
-from PWSafeV3Records import *
-from errors import *
 import os, os.path
 from struct import pack, unpack
 import logging, logging.config
 import socket
 import getpass
 import re
+from uuid import uuid4
 
 log = logging.getLogger("psafe.lib.init")
 log.debug('initing')
-from uuid import uuid4
+
+# PyPWSafe modules we need
+from crypt import *
+from PWSafeV3Headers import *
+from PWSafeV3Records import *
+from errors import *
+
 
 def stretchkey(passwd, salt, count):
     """
@@ -59,14 +53,14 @@ def stretchkey(passwd, salt, count):
     """
     assert count > 0
     # Hash once with both
-    inithsh = sha256_func()
+    inithsh = SHA256()
     inithsh.update(passwd)
     inithsh.update(salt)
     # Expecting it in binary form; NOT HEX FORM
     hsh = inithsh.digest()
     # Rehash
     for i in xrange(count):
-        t = sha256_func()
+        t = SHA256()
         t.update(hsh)
         hsh = t.digest()
     return hsh
@@ -314,16 +308,14 @@ class PWSafe3(object):
         """Regenerate b1 and b2. This is the encrypted form of K.
 
         """
-        tw = MCRYPT('twofish', 'ecb')
-        tw.init(self.pprime)
+        tw = TwofishECBCEncryption(self.pprime)
         self.b1b2 = tw.encrypt(self.enckey)
         log.debug("B1/B2 set to %s" % repr(self.b1b2))
 
     def _regen_b3b4(self):
         """Regenerate b3 and b4. This is the encrypted form of L.
         """
-        tw = MCRYPT('twofish', 'ecb')
-        tw.init(self.pprime)
+        tw = TwofishECBCEncryption(self.pprime)
         self.b3b4 = tw.encrypt(self.hshkey)
         log.debug("B3/B4 set to %s" % repr(self.b3b4))
 
@@ -331,11 +323,11 @@ class PWSafe3(object):
         """Regenerate H(P')
         Save the SHA256 of self.pprime.
         """
-        hsh = sha256_func()
+        hsh = SHA256()
         hsh.update(self.pprime)
         self.hpprime = hsh.digest()
         log.debug("Set H(P') to % s" % repr(self.hpprime))
-        assert self.check_password()
+        assert self.check_password(), "H(P') should still match password - it doesn't"
 
     def load(self):
         """Load a psafe3 file
@@ -412,17 +404,16 @@ class PWSafe3(object):
     def _fetch_block(self, num_blocks = 1):
         """Returns one or more 16 - byte block of data. Raises EOFError when there is no more data. """
         assert num_blocks > 0
-        bytes = num_blocks * 16
-        if bytes > len(self.remaining_headers):
+        numBytes = num_blocks * 16
+        if numBytes > len(self.remaining_headers):
             raise EOFError, "No more header data"
-        ret = self.remaining_headers[:bytes]
-        self.remaining_headers = self.remaining_headers[bytes:]
+        ret = self.remaining_headers[:numBytes]
+        self.remaining_headers = self.remaining_headers[numBytes:]
         return ret
 
     def calc_keys(self):
         """Calculate sessions keys for encryption and hmac. Is based on pprime, b1b2, b3b4"""
-        tw = MCRYPT('twofish', 'ecb')
-        tw.init(self.pprime)
+        tw = TwofishECBCDecryption(self.pprime)
         self.enckey = tw.decrypt(self.b1b2)
         # its ok to reuse; ecb doesn't keep state info
         self.hshkey = tw.decrypt(self.b3b4)
@@ -431,17 +422,14 @@ class PWSafe3(object):
 
     def decrypt_data(self):
         """Decrypt encrypted portion of header and data"""
-        log.debug("Creating mcrypt object")
-        tw = MCRYPT('twofish', 'cbc')
-        log.debug("Adding key & iv")
-        tw.init(self.enckey, self.iv)
+        log.debug("Creating crypto object")
+        tw = TwofishCBCDecryption(self.enckey,self.iv)
         log.debug("Decrypting data")
         self.fulldata = tw.decrypt(self.cryptdata)
 
     def encrypt_data(self):
         """Encrypted fulldata to cryptdata"""
-        tw = MCRYPT('twofish', 'cbc')
-        tw.init(self.enckey, self.iv)
+        tw = TwofishCBCEncryption(self.enckey, self.iv)
         self.cryptdata = tw.encrypt(self.fulldata)
 
     def current_hmac(self, cached = False):
@@ -459,14 +447,14 @@ class PWSafe3(object):
             log.debug("Adding hmac data %r from %r" % (i.hmac_data(), i.__class__.__name__))
             data += i.hmac_data()
         log.debug("Building hmac with key %s", repr(self.hshkey))
-        hm = HMAC(self.hshkey, data, sha256_func)
+        hm = SHA256HMAC(self.hshkey, data)
         # print hm.hexdigest()
-        log.debug("HMAC %s-%s", repr(hm.hexdigest()), repr(hm.digest()))
+        log.debug("HMAC %r aka %r", hm.hexdigest(), hm.digest())
         return hm.digest()
 
     def check_password(self):
         """Check that the hash in self.pprime matches what's in the password safe. True if password matches hash in hpprime. False otherwise"""
-        hsh = sha256_func()
+        hsh = SHA256()
         hsh.update(self.pprime)
         return hsh.digest() == self.hpprime
 
