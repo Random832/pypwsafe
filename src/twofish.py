@@ -315,15 +315,15 @@ def encrypt(pkey, in_blk):
     blk = [0, 0, 0, 0]
 
     if WORD_BIGENDIAN:
-	blk[0] = byteswap32(in_blk[0]) ^ pkey.l_key[0];
-	blk[1] = byteswap32(in_blk[1]) ^ pkey.l_key[1];
-	blk[2] = byteswap32(in_blk[2]) ^ pkey.l_key[2];
-	blk[3] = byteswap32(in_blk[3]) ^ pkey.l_key[3];
+        blk[0] = byteswap32(in_blk[0]) ^ pkey.l_key[0];
+        blk[1] = byteswap32(in_blk[1]) ^ pkey.l_key[1];
+        blk[2] = byteswap32(in_blk[2]) ^ pkey.l_key[2];
+        blk[3] = byteswap32(in_blk[3]) ^ pkey.l_key[3];
     else:
-	blk[0] = in_blk[0] ^ pkey.l_key[0];
-	blk[1] = in_blk[1] ^ pkey.l_key[1];
-	blk[2] = in_blk[2] ^ pkey.l_key[2];
-	blk[3] = in_blk[3] ^ pkey.l_key[3];        
+        blk[0] = in_blk[0] ^ pkey.l_key[0];
+        blk[1] = in_blk[1] ^ pkey.l_key[1];
+        blk[2] = in_blk[2] ^ pkey.l_key[2];
+        blk[3] = in_blk[3] ^ pkey.l_key[3];        
 
     for i in xrange(8):
         t1 = ( pkey.mk_tab[0][byte(blk[1],3)] ^ pkey.mk_tab[1][byte(blk[1],0)] ^ pkey.mk_tab[2][byte(blk[1],1)] ^ pkey.mk_tab[3][byte(blk[1],2)] ); 
@@ -339,10 +339,10 @@ def encrypt(pkey, in_blk):
         blk[1] = rotl32(blk[1], 1) ^ ((t0 + 2 * t1 + pkey.l_key[4 * (i) + 11]) % 0x100000000);         
 
     if WORD_BIGENDIAN:
-	in_blk[0] = byteswap32(blk[2] ^ pkey.l_key[4]);
-	in_blk[1] = byteswap32(blk[3] ^ pkey.l_key[5]);
-	in_blk[2] = byteswap32(blk[0] ^ pkey.l_key[6]);
-	in_blk[3] = byteswap32(blk[1] ^ pkey.l_key[7]);
+        in_blk[0] = byteswap32(blk[2] ^ pkey.l_key[4]);
+        in_blk[1] = byteswap32(blk[3] ^ pkey.l_key[5]);
+        in_blk[2] = byteswap32(blk[0] ^ pkey.l_key[6]);
+        in_blk[3] = byteswap32(blk[1] ^ pkey.l_key[7]);
     else:
         in_blk[0] = blk[2] ^ pkey.l_key[4];
         in_blk[1] = blk[3] ^ pkey.l_key[5];
@@ -355,15 +355,15 @@ def decrypt(pkey, in_blk):
     blk = [0, 0, 0, 0]
     
     if WORD_BIGENDIAN:
-	blk[0] = byteswap32(in_blk[0]) ^ pkey.l_key[4];
-	blk[1] = byteswap32(in_blk[1]) ^ pkey.l_key[5];
-	blk[2] = byteswap32(in_blk[2]) ^ pkey.l_key[6];
-	blk[3] = byteswap32(in_blk[3]) ^ pkey.l_key[7];
+        blk[0] = byteswap32(in_blk[0]) ^ pkey.l_key[4];
+        blk[1] = byteswap32(in_blk[1]) ^ pkey.l_key[5];
+        blk[2] = byteswap32(in_blk[2]) ^ pkey.l_key[6];
+        blk[3] = byteswap32(in_blk[3]) ^ pkey.l_key[7];
     else:
-	blk[0] = in_blk[0] ^ pkey.l_key[4];
-	blk[1] = in_blk[1] ^ pkey.l_key[5];
-	blk[2] = in_blk[2] ^ pkey.l_key[6];
-	blk[3] = in_blk[3] ^ pkey.l_key[7];    
+        blk[0] = in_blk[0] ^ pkey.l_key[4];
+        blk[1] = in_blk[1] ^ pkey.l_key[5];
+        blk[2] = in_blk[2] ^ pkey.l_key[6];
+        blk[3] = in_blk[3] ^ pkey.l_key[7];    
 
     for i in xrange(7, -1, -1):
         t1 = ( pkey.mk_tab[0][byte(blk[1],3)] ^ pkey.mk_tab[1][byte(blk[1],0)] ^ pkey.mk_tab[2][byte(blk[1],1)] ^ pkey.mk_tab[3][byte(blk[1],2)] )
@@ -379,15 +379,15 @@ def decrypt(pkey, in_blk):
         blk[1] = rotr32(blk[1] ^ ((t0 + 2 * t1 + pkey.l_key[4 * (i) + 9]) % 0x100000000), 1)        
 
     if WORD_BIGENDIAN:
-	in_blk[0] = byteswap32(blk[2] ^ pkey.l_key[0]);
-	in_blk[1] = byteswap32(blk[3] ^ pkey.l_key[1]);
-	in_blk[2] = byteswap32(blk[0] ^ pkey.l_key[2]);
-	in_blk[3] = byteswap32(blk[1] ^ pkey.l_key[3]);
+        in_blk[0] = byteswap32(blk[2] ^ pkey.l_key[0]);
+        in_blk[1] = byteswap32(blk[3] ^ pkey.l_key[1]);
+        in_blk[2] = byteswap32(blk[0] ^ pkey.l_key[2]);
+        in_blk[3] = byteswap32(blk[1] ^ pkey.l_key[3]);
     else:
-	in_blk[0] = blk[2] ^ pkey.l_key[0];
-	in_blk[1] = blk[3] ^ pkey.l_key[1];
-	in_blk[2] = blk[0] ^ pkey.l_key[2];
-	in_blk[3] = blk[1] ^ pkey.l_key[3];
+        in_blk[0] = blk[2] ^ pkey.l_key[0];
+        in_blk[1] = blk[3] ^ pkey.l_key[1];
+        in_blk[2] = blk[0] ^ pkey.l_key[2];
+        in_blk[3] = blk[1] ^ pkey.l_key[3];
     return
 
 __testkey = '\xD4\x3B\xB7\x55\x6E\xA3\x2E\x46\xF2\xA2\x82\xB7\xD4\x5B\x4E\x0D\x57\xFF\x73\x9D\x4D\xC9\x2C\x1B\xD7\xFC\x01\x70\x0C\xC8\x21\x6F'
