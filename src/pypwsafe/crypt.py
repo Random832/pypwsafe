@@ -7,6 +7,7 @@ Created on Feb 18, 2013
 '''
 import logging
 
+
 class TwofishECBCEncryption(object):
     def __init__(self,key):
         self.log = logging.getLogger("twofish.ecb.%s"%type(self).__name__)
@@ -58,6 +59,7 @@ class TwofishECBCDecryption(object):
     def __repr__(self):
         return "<%s %s>"%(type(self).__name__,self.mode)
 
+
 class TwofishCBCEncryption(object):
     def __init__(self,key,iv):
         self.log = logging.getLogger("twofish.cbc.%s"%type(self).__name__)
@@ -83,6 +85,7 @@ class TwofishCBCEncryption(object):
     
     def __repr__(self):
         return "<%s %s>"%(type(self).__name__,self.mode)
+
 
 class TwofishCBCDecryption(object):
     def __init__(self,key,iv):
