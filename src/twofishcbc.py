@@ -3,7 +3,7 @@ twofish in CBC mode.
  
 Created on Feb 18, 2013
 
-@author: gpmidi
+@author: Paulson McIntyre <paul@gpmidi.net>
 '''
 import logging
 
