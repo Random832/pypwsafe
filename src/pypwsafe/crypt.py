@@ -8,6 +8,60 @@ Created on Feb 18, 2013
 import logging
 
 
+class SHA256HMAC(object):
+    def __init__(self,key,data):
+        self.mode=None
+        self.key=key
+        self.data=data
+        self.python26()
+        if not self.mode:
+            self.python24()
+        if not self.mode:
+            self.pythonSomething()
+        if not self.mode:
+            raise ImportError("Failed to find a valid HMAC+SHA256 library")
+            
+    def digest(self):
+        # All the same...for now....
+        if self.mode=='Python 2.6':
+            return self.hmac.digest()
+        elif self.mode=='Python 2.4':
+            return self.hmac.digest()
+        elif self.mode=='Python ???':
+            return self.hmac.digest()
+    
+    def pythonSomething(self):
+        try:
+            from Crypto.Hash.SHA256 import new as sha256_func  # @UnresolvedImport @Reimport
+            from hmac import new as HMAC
+            self.mode="Python ???"
+            self.hmac = HMAC(self.key, self.data, sha256_func)
+        except Exception,e:
+            self.log.warn("Failed to import vFIXME libs with %r",e)
+    
+            
+    def python25(self):
+        # FIXME: Validate that this is actually for Python 2.4 
+        # Could be 2.5 - Not sure yet
+        try:
+            from hashlib import sha256_func #@UnresolvedImport
+            from hmac import new as HMAC
+            self.mode="Python 2.4"
+            self.hmac = HMAC(self.key, self.data, sha256_func)
+        except Exception,e:
+            self.log.warn("Failed to import v2.4 libs with %r",e)
+    
+    def python26(self):
+        try:
+            from hmac import new as HMAC
+            from hashlib import sha256 as sha256_func
+            self.mode="Python 2.6"
+            self.hmac = HMAC(self.key, self.data, sha256_func)
+            return True
+        except Exception,e:
+            self.log.warn("Failed to import v2.6 libs with %r",e)
+            return False
+
 class TwofishECBCEncryption(object):
     def __init__(self,key):
         self.log = logging.getLogger("twofish.ecb.%s"%type(self).__name__)
