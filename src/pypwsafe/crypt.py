@@ -32,6 +32,9 @@ class SHA256(object):
                 except Exception,e:
                     self.log.warn("Failed to import FIXME libs with %r",e)
                     raise ImportError("Failed to find a valid SHA256 library")
+        
+        if data is not None:
+            self.update(data)            
     
     def update(self,data):
         return self.hsh.update(data)
