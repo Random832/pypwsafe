@@ -358,11 +358,12 @@ class PWSafe3(object):
         log.debug("B3B4: % s" % repr(self.b3b4))
         log.debug("IV: % s" % repr(self.iv))
         self.cryptdata = self.flfull[152:-48]
-        assert len(self.cryptdata)%16==0,"Expected the encrypted data length to be a multiple of 16. Got %d. "%len(self.cryptdata)
         log.debug("Data len: %d"%len(self.cryptdata))
         (self.eof, self.hmac) = unpack('16s32s', self.flfull[-48:])
         log.debug("EOF: % s" % repr(self.eof))
         log.debug("HMAC: % s" % repr(self.hmac))
+        assert self.eof=='PWS3-EOFPWS3-EOF'
+        assert len(self.cryptdata)%16==0,"Expected the encrypted data length to be a multiple of 16. Got %d. "%len(self.cryptdata)
         
         # Determine the password hash
         self.update_pprime()

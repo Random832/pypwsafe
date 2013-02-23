@@ -31,7 +31,6 @@ class TwofishPurePythonTests(unittest.TestCase):
                     32,
                     512,
                     8192,
-                    pow(1024,2),
                     ]
     TEST_KEY_LEN=32
     
