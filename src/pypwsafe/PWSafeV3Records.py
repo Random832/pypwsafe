@@ -443,6 +443,7 @@ class RecordProp(object):
 
     def _pad(self, data):
         """ Pad out data to 16 bytes """
+        assert isinstance(data,str)
         add_data = 16 - len(data) % 16
         if add_data == 16:
             add_data = 0
@@ -463,6 +464,7 @@ class RecordProp(object):
     def serialiaze(self):
         """Returns the raw data blocks to generate this object. """
         serial = self.serial()
+        assert isinstance(serial,str)
         header = pack('=lc', len(serial), chr(self.rTYPE))
         padded = self._pad(header + serial)
         psafe_logger.debug("Padded output %s" % repr(padded))

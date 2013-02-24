@@ -252,7 +252,7 @@ class PWSafe3(object):
         """
         if self.mode == "RW":
             self.serialiaze()
-            fil = open(self.filename, "w")
+            fil = open(self.filename, "wb")
             fil.write(self.flfull)
             fil.close()
         else:
@@ -294,6 +294,7 @@ class PWSafe3(object):
         # Encrypted self.fulldata to self.cryptdata
         log.debug("Encrypting header/record data %s" % repr(self.fulldata))
         self.encrypt_data()
+        log.debug("Encrypted data: %r"%self.cryptdata)
         self.flfull += self.cryptdata
         log.debug("Adding crypt data %s" % repr(self.cryptdata))
         self.flfull += pack('16s32s', self.eof, self.hmac)
@@ -363,7 +364,7 @@ class PWSafe3(object):
         log.debug("EOF: % s" % repr(self.eof))
         log.debug("HMAC: % s" % repr(self.hmac))
         assert self.eof=='PWS3-EOFPWS3-EOF'
-        assert len(self.cryptdata)%16==0,"Expected the encrypted data length to be a multiple of 16. Got %d. "%len(self.cryptdata)
+        assert len(self.cryptdata)%16==0,"Expected the encrypted data length to be a multiple of 16. Got %d. Data: %r"%(len(self.cryptdata),self.cryptdata)
         
         # Determine the password hash
         self.update_pprime()
@@ -435,6 +436,7 @@ class PWSafe3(object):
         """Encrypted fulldata to cryptdata"""
         tw = TwofishCBCEncryption(self.enckey, self.iv)
         self.cryptdata = tw.encrypt(self.fulldata)
+        assert len(self.cryptdata)%16==0
 
     def current_hmac(self, cached = False):
         """Returns the current hmac of self.fulldata"""
@@ -832,7 +834,7 @@ class PWSafe3(object):
 # Misc helper functions
 def ispsafe3(filename):
     """Return True if the file appears to be a psafe v3 file. Does not do in-depth checks. """
-    fil = open(filename, "r")
+    fil = open(filename, "rb")
     data = fil.read(4)
     fil.close()
     return data == "PWS3"

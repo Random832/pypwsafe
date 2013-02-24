@@ -132,7 +132,20 @@ class TwofishECBCEncryption(object):
             self.mode = 'Pure-Python'
             self.twf = Twofish(self.key)
     
-    def encrypt(self,block):
+    def encrypt(self,data):
+        m=len(data)%16
+        if m!=0:
+            data+="\x00"*(16-m)
+        ret=''
+        while len(data)>0:
+            block=data[:16]
+            data=data[16:]
+            ret+=self.encryptBlock(block=block)
+        return ret
+            
+    def encryptBlock(self,block):
+        """Encrypt exactly one block"""
+        assert len(block)==16
         return self.twf.encrypt(block)
     
     def __repr__(self):
@@ -185,7 +198,22 @@ class TwofishCBCEncryption(object):
             self.mode = 'Pure-Python'
             self.twf = TwofishCBCEncryption(self.key,self.iv)
     
-    def encrypt(self,block):
+    def encrypt(self,data):
+        if not isinstance(data,str):
+            raise TypeError("Expected a string, got %r"%type(data))
+        m=len(data)%16
+        if m!=0:
+            data+="\x00"*(16-m)
+        ret=''
+        while len(data)>0:
+            block=data[:16]
+            data=data[16:]
+            ret+=self.encryptBlock(block=block)
+        return ret
+    
+    def encryptBlock(self,block):
+        """Encrypt exactly one block"""
+        assert len(block)==16
         return self.twf.encrypt(block)
     
     def __repr__(self):

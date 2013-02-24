@@ -53,7 +53,8 @@ FIXME: Fill this in
 FAQ
 ===
 ### Why mcrypt and not use PyCrypto?
-The pyCrypto library doesn't support TwoFish, which is a newer cipher based on Blowfish. Twofish is required to encrypt/decrypt Password Safe v3 files.  
+The pyCrypto library doesn't support TwoFish, which is a newer cipher based 
+on Blowfish. Twofish is required to encrypt/decrypt Password Safe v3 files.  
 
 ### Where can I find details on the Password Safe file format?
 The format spec is kept in the Password Safe project's SVN repo. Go 
@@ -66,3 +67,6 @@ TODO
     http://code.google.com/p/python-keysafe/source/browse/crypto/twofish.py
     http://www.bjrn.se/code/twofishpy.txt 
  2. Need to update against the latest version of the official psafe format v3 doc.
+ 3. Change IV on every save. 
+ 4. Make locking 'with' compatible.
+  
