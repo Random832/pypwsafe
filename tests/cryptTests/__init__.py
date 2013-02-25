@@ -23,3 +23,4 @@ Created on Feb, 18 2013
 @version: 0.1
 '''
 from twofishTests import *
+from pwsCryptTF import *
