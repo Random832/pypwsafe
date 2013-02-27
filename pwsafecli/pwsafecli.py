@@ -30,20 +30,25 @@ from uuid import UUID
 Record = None
 PWSafe3 = None
 
+
 class PWSafeCLIError(Exception):
     pass
+
 
 class PWSafeCLIValidationError(Exception):
     pass
 
+
 VALID_ATTRIBUTES = ["group", "title", "username", "password", "UUID", "note", "created", "PasswordModified",
                     "EntryModified", "LastAccess", "expires", "email", "URL", "AutoType"]
+
 
 def get_record_attr(record, attr):
     if not attr[0].isupper():
         attr = attr.title()
     bound_method = getattr(record, "get%s" % attr)
     return bound_method()
+
 
 def match_valid(record, **params):
     if not params:
@@ -52,16 +57,18 @@ def match_valid(record, **params):
     valid = False
 
     for key, value in params.items():
-         if value is None:
-             continue
-         valid = get_record_attr(record, key) == value
-         if not valid:
-             return False
+        if value is None:
+            continue
+        valid = get_record_attr(record, key) == value
+        if not valid:
+            return False
 
     return valid
 
+
 def get_matching_records(psafe, **params): # pragma: no cover
     return [ r for r in psafe.records if match_valid(r, **params) ]
+
 
 def new_safe(filename, password, username = None,
              dbname = None, dbdesc = None): # pragma: no cover
@@ -89,6 +96,7 @@ def new_safe(filename, password, username = None,
     safe.save()
 
     return safe
+
 
 def add_or_update_record(psafe, record, options): # pragma: no cover
     """ Adds an entry to the given psafe. Update if it already exists. Reloads the psafe data once complete.
@@ -132,6 +140,7 @@ def add_or_update_record(psafe, record, options): # pragma: no cover
     psafe.save()
     return record.getUUID()
 
+
 def collect_record_options(options):
     collected = {}
     potentials = ["group", "title", "username", "UUID"]
@@ -140,6 +149,7 @@ def collect_record_options(options):
         if value is not None:
             collected[item] = value
     return collected
+
 
 def show_records(records, attributes): # pragma: no cover
     if not attributes:
@@ -155,6 +165,7 @@ def show_records(records, attributes): # pragma: no cover
             print "    %s: %s" % (attr, get_record_attr(record, i))
         print "]"
 
+
 def get_safe(filename, password): # pragma: no cover
     safe = None
 
@@ -167,6 +178,7 @@ def get_safe(filename, password): # pragma: no cover
 
     return safe
 
+
 class Locked(object): # pragma: no cover
     def __init__(self, lock):
         self.lock = lock
@@ -174,14 +186,16 @@ class Locked(object): # pragma: no cover
     def __enter__(self):
         self.lock.lock()
 
-    def __exit__(self, type, value, tb):
+    def __exit__(self, *exc_info):
         self.lock.unlock()
+
 
 def add_validator(options):
     if options.title is None:
         raise PWSafeCLIValidationError("--title must be specified")
     if options.password is None:
         raise PWSafeCLIValidationError("--password must be specified")
+
 
 def add_action(options): # pragma: no cover
     safe = get_safe(options.filename, options.safe_password)
@@ -190,9 +204,11 @@ def add_action(options): # pragma: no cover
     if options.verbose:
         print result
 
+
 def delete_validator(options):
     if options.UUID is None:
         raise PWSafeCLIValidationError("--uuid must be specified")
+
 
 def delete_action(options): # pragma: no cover
     safe = get_safe(options.filename, options.safe_password)
@@ -208,6 +224,7 @@ def delete_action(options): # pragma: no cover
         safe.records.remove(records[0])
         safe.save()    
 
+
 def display_validator(option):
     attrs = option.split(',')
     try:
@@ -220,14 +237,17 @@ def display_validator(option):
     if unsupported:
         raise PWSafeCLIValidationError("unsupport display fields: %s" % unsupported)
 
+
 def is_valid_field_name(field):
     if field in VALID_ATTRIBUTES:
         return True
     return False
 
+
 def dump_validator(options): # pragma: no cover
     if options.display:
         display_validator(options.display)
+
 
 def dump_action(options): # pragma: no cover
     safe = get_safe(options.filename, options.safe_password)
@@ -238,12 +258,14 @@ def dump_action(options): # pragma: no cover
 
         show_records(safe.records, options.display)
 
+
 def get_validator(options):
     if not any([ getattr(options, attr) for attr in ("group", "title", "username", "UUID")]):
         raise PWSafeCLIValidationError("one of --group, --title, --username or --uuid must be provided")
 
     if options.display:
         display_validator(options.display)
+
 
 def get_action(options): # pragma: no cover
     record_options = collect_record_options(options)
@@ -257,16 +279,20 @@ def get_action(options): # pragma: no cover
 
         show_records(records, options.display)
 
+
 def init_validator(options):
     pass
+
 
 def init_action(options): # pragma: no cover
     safe = new_safe(options.filename, options.safe_password, options.username,
                     options.dbname, options.dbdesc)
 
+
 def update_validator(options):
     if not options.UUID:
         raise PWSafeCLIValidationError("must provide --uuid")
+
 
 def update_action(options): # pragma: no cover
     record_options = collect_record_options(options)
@@ -280,13 +306,15 @@ def update_action(options): # pragma: no cover
             raise PWSafeCLIError("No records matching %s found" % record_options)
         elif count > 1:
             raise NotImplementedError("implement multiple record choice")
-        add_or_update_records(safe, records[0], options)
+        add_or_update_record(safe, records[0], options)
+
 
 usage_message = """
 Usage: psafecli [add|delete|get|init|update]
 
 Run help for a subcommand for more options.
 """
+
 
 def makeArgParser():
     parsers = {}
@@ -342,6 +370,7 @@ def makeArgParser():
 
     return parsers
 
+
 def parse_commandline(parsers, argv):
     if len(argv) == 1:
         raise PWSafeCLIValidationError("must specify a command to run")
@@ -382,6 +411,7 @@ def parse_commandline(parsers, argv):
 
     return options
 
+
 def main(options): # pragma: no cover
     actions = { "add": (add_validator, add_action),
                 "delete": (delete_validator, delete_action),
@@ -402,6 +432,7 @@ def main(options): # pragma: no cover
         options.safe_password = getpass("Enter the password for PWSafe3 file: %s\n> " % options.filename)
 
     func(options)
+
 
 if __name__ == "__main__": # pragma: no cover
     logging.basicConfig(level = logging.WARNING,
