@@ -30,7 +30,7 @@ Install Instructions
 
 RHEL/CentOS
 -----------
- 1. Install libmcrypt and it's dev package along with the Python dev package: 
+ 1. Install libmcrypt and it's dev package along with the Python dev package[1]:
 	yum install libmcrypt-devel libmcrypt python-devel
 	These packages are needed by the installer for python-mcrypt
  2. Install the standard Linux development tools. For RHEL/CentOS 5 and 6, `yum groupinstall 'Development tools'` can be used if your YUM repos have group information. 
@@ -39,6 +39,9 @@ RHEL/CentOS
 	python setup.py install
  5. Test that the module loads
 	python -c "import pypwsafe"
+
+Note 1: This package requires Python 2.6, so on EL5 systems python26 and
+python26-devel are required.
 
 Windows
 -------
