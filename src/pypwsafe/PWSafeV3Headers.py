@@ -862,7 +862,13 @@ class RecentEntriesHeader(Header):
         left = self.data
         assert len(left) % LEN == 2
         self.recentEntries = []
+        count = int(unpack('=2s', left[:2])[0], 16)
+        log.debug("Should have %r records", count)
+        left = left[2:]
         while len(left) >= LEN:
+            count -= 1
+            if count < 0:
+                log.warn("More record data than expected")
             segement = left[:LEN]
             left = left[LEN:]
             log.debug("Working with %r", segement)
