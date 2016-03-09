@@ -36,6 +36,7 @@
 
 try:
     import psyco
+
     psyco.full()
 except ImportError:
     pass
@@ -43,18 +44,17 @@ except ImportError:
 block_size = 16
 key_size = 32
 
+
 class Twofish:
-    
     def __init__(self, key=None):
         """Twofish."""
 
         if key:
             self.set_key(key)
 
-
     def set_key(self, key):
         """Init."""
-        
+
         key_len = len(key)
         if key_len not in [16, 24, 32]:
             # XXX: add padding?
@@ -65,9 +65,9 @@ class Twofish:
         if key_len > 32:
             # XXX: prune?
             raise KeyError, "key_len > 32"
-        
+
         self.context = TWI()
-        
+
         key_word32 = [0] * 32
         i = 0
         while key:
@@ -77,25 +77,23 @@ class Twofish:
 
         set_key(self.context, key_word32, key_len)
 
-        
     def decrypt(self, block):
         """Decrypt blocks."""
-        
+
         if len(block) % 16:
             raise ValueError, "block size must be a multiple of 16"
 
         plaintext = ''
-        
+
         while block:
             a, b, c, d = struct.unpack("<4L", block[:16])
             temp = [a, b, c, d]
             decrypt(self.context, temp)
             plaintext += struct.pack("<4L", *temp)
             block = block[16:]
-            
+
         return plaintext
 
-        
     def encrypt(self, block):
         """Encrypt blocks."""
 
@@ -103,32 +101,29 @@ class Twofish:
             raise ValueError, "block size must be a multiple of 16"
 
         ciphertext = ''
-        
+
         while block:
             a, b, c, d = struct.unpack("<4L", block[0:16])
             temp = [a, b, c, d]
             encrypt(self.context, temp)
             ciphertext += struct.pack("<4L", *temp)
             block = block[16:]
-            
-        return ciphertext
 
+        return ciphertext
 
     def get_name(self):
         """Return the name of the cipher."""
-        
-        return "Twofish"
 
+        return "Twofish"
 
     def get_block_size(self):
         """Get cipher block size in bytes."""
-        
+
         return 16
 
-    
     def get_key_size(self):
         """Get cipher key size in bytes."""
-        
+
         return 32
 
 
@@ -143,29 +138,35 @@ WORD_BIGENDIAN = 0
 if sys.byteorder == 'big':
     WORD_BIGENDIAN = 1
 
+
 def rotr32(x, n):
     return (x >> n) | ((x << (32 - n)) & 0xFFFFFFFF)
 
+
 def rotl32(x, n):
     return ((x << n) & 0xFFFFFFFF) | (x >> (32 - n))
+
 
 def byteswap32(x):
     return ((x & 0xff) << 24) | (((x >> 8) & 0xff) << 16) | \
            (((x >> 16) & 0xff) << 8) | ((x >> 24) & 0xff)
 
+
 class TWI:
     def __init__(self):
-        self.k_len = 0 # word32
-        self.l_key = [0]*40 # word32
-        self.s_key = [0]*4 # word32
-        self.qt_gen = 0 # word32
-        self.q_tab = [[0]*256, [0]*256] # byte
-        self.mt_gen = 0 # word32
-        self.m_tab = [[0]*256, [0]*256, [0]*256, [0]*256] # word32
-        self.mk_tab = [[0]*256, [0]*256, [0]*256, [0]*256] # word32
+        self.k_len = 0  # word32
+        self.l_key = [0] * 40  # word32
+        self.s_key = [0] * 4  # word32
+        self.qt_gen = 0  # word32
+        self.q_tab = [[0] * 256, [0] * 256]  # byte
+        self.mt_gen = 0  # word32
+        self.m_tab = [[0] * 256, [0] * 256, [0] * 256, [0] * 256]  # word32
+        self.mk_tab = [[0] * 256, [0] * 256, [0] * 256, [0] * 256]  # word32
+
 
 def byte(x, n):
     return (x >> (8 * n)) & 0xff
+
 
 tab_5b = [0, 90, 180, 238]
 tab_ef = [0, 238, 180, 90]
@@ -180,7 +181,8 @@ qt2 = [[11, 10, 5, 14, 6, 13, 9, 0, 12, 8, 15, 3, 2, 4, 7, 1],
 qt3 = [[13, 7, 15, 4, 1, 2, 6, 14, 9, 11, 3, 0, 8, 5, 12, 10],
        [11, 9, 5, 1, 12, 3, 13, 14, 6, 4, 7, 15, 2, 0, 8, 10]]
 
-def qp(n, x): # word32, byte
+
+def qp(n, x):  # word32, byte
     n %= 0x100000000
     x %= 0x100
     a0 = x >> 4;
@@ -195,11 +197,13 @@ def qp(n, x): # word32, byte
     b4 = qt3[n][b3];
     return (b4 << 4) | a4;
 
+
 def gen_qtab(pkey):
     for i in xrange(256):
         pkey.q_tab[0][i] = qp(0, i)
         pkey.q_tab[1][i] = qp(1, i)
-        
+
+
 def gen_mtab(pkey):
     for i in xrange(256):
         f01 = pkey.q_tab[1][i]
@@ -215,28 +219,42 @@ def gen_mtab(pkey):
         pkey.m_tab[1][i] = fef + (fef << 8) + (f5b << 16) + (f01 << 24);
         pkey.m_tab[3][i] = f5b + (f01 << 8) + (fef << 16) + (f5b << 24);
 
+
 def gen_mk_tab(pkey, key):
     if pkey.k_len == 2:
         for i in xrange(256):
             by = i % 0x100
-            pkey.mk_tab[0][i] = pkey.m_tab[0][pkey.q_tab[0][pkey.q_tab[0][by] ^ byte(key[1],0)] ^ byte(key[0],0)];
-            pkey.mk_tab[1][i] = pkey.m_tab[1][pkey.q_tab[0][pkey.q_tab[1][by] ^ byte(key[1],1)] ^ byte(key[0],1)];
-            pkey.mk_tab[2][i] = pkey.m_tab[2][pkey.q_tab[1][pkey.q_tab[0][by] ^ byte(key[1],2)] ^ byte(key[0],2)];
-            pkey.mk_tab[3][i] = pkey.m_tab[3][pkey.q_tab[1][pkey.q_tab[1][by] ^ byte(key[1],3)] ^ byte(key[0],3)];
+            pkey.mk_tab[0][i] = pkey.m_tab[0][pkey.q_tab[0][pkey.q_tab[0][by] ^ byte(key[1], 0)] ^ byte(key[0], 0)];
+            pkey.mk_tab[1][i] = pkey.m_tab[1][pkey.q_tab[0][pkey.q_tab[1][by] ^ byte(key[1], 1)] ^ byte(key[0], 1)];
+            pkey.mk_tab[2][i] = pkey.m_tab[2][pkey.q_tab[1][pkey.q_tab[0][by] ^ byte(key[1], 2)] ^ byte(key[0], 2)];
+            pkey.mk_tab[3][i] = pkey.m_tab[3][pkey.q_tab[1][pkey.q_tab[1][by] ^ byte(key[1], 3)] ^ byte(key[0], 3)];
     if pkey.k_len == 3:
         for i in xrange(256):
             by = i % 0x100
-            pkey.mk_tab[0][i] = pkey.m_tab[0][pkey.q_tab[0][pkey.q_tab[0][pkey.q_tab[1][by] ^ byte(key[2], 0)] ^ byte(key[1], 0)] ^ byte(key[0], 0)];
-            pkey.mk_tab[1][i] = pkey.m_tab[1][pkey.q_tab[0][pkey.q_tab[1][pkey.q_tab[1][by] ^ byte(key[2], 1)] ^ byte(key[1], 1)] ^ byte(key[0], 1)];
-            pkey.mk_tab[2][i] = pkey.m_tab[2][pkey.q_tab[1][pkey.q_tab[0][pkey.q_tab[0][by] ^ byte(key[2], 2)] ^ byte(key[1], 2)] ^ byte(key[0], 2)];
-            pkey.mk_tab[3][i] = pkey.m_tab[3][pkey.q_tab[1][pkey.q_tab[1][pkey.q_tab[0][by] ^ byte(key[2], 3)] ^ byte(key[1], 3)] ^ byte(key[0], 3)];
+            pkey.mk_tab[0][i] = pkey.m_tab[0][
+                pkey.q_tab[0][pkey.q_tab[0][pkey.q_tab[1][by] ^ byte(key[2], 0)] ^ byte(key[1], 0)] ^ byte(key[0], 0)];
+            pkey.mk_tab[1][i] = pkey.m_tab[1][
+                pkey.q_tab[0][pkey.q_tab[1][pkey.q_tab[1][by] ^ byte(key[2], 1)] ^ byte(key[1], 1)] ^ byte(key[0], 1)];
+            pkey.mk_tab[2][i] = pkey.m_tab[2][
+                pkey.q_tab[1][pkey.q_tab[0][pkey.q_tab[0][by] ^ byte(key[2], 2)] ^ byte(key[1], 2)] ^ byte(key[0], 2)];
+            pkey.mk_tab[3][i] = pkey.m_tab[3][
+                pkey.q_tab[1][pkey.q_tab[1][pkey.q_tab[0][by] ^ byte(key[2], 3)] ^ byte(key[1], 3)] ^ byte(key[0], 3)];
     if pkey.k_len == 4:
         for i in xrange(256):
             by = i % 0x100
-            pkey.mk_tab[0][i] = pkey.m_tab[0][pkey.q_tab[0][pkey.q_tab[0][pkey.q_tab[1][pkey.q_tab[1][by] ^ byte(key[3], 0)] ^ byte(key[2], 0)] ^ byte(key[1], 0)] ^ byte(key[0], 0)];
-            pkey.mk_tab[1][i] = pkey.m_tab[1][pkey.q_tab[0][pkey.q_tab[1][pkey.q_tab[1][pkey.q_tab[0][by] ^ byte(key[3], 1)] ^ byte(key[2], 1)] ^ byte(key[1], 1)] ^ byte(key[0], 1)];
-            pkey.mk_tab[2][i] = pkey.m_tab[2][pkey.q_tab[1][pkey.q_tab[0][pkey.q_tab[0][pkey.q_tab[0][by] ^ byte(key[3], 2)] ^ byte(key[2], 2)] ^ byte(key[1], 2)] ^ byte(key[0], 2)];
-            pkey.mk_tab[3][i] = pkey.m_tab[3][pkey.q_tab[1][pkey.q_tab[1][pkey.q_tab[0][pkey.q_tab[1][by] ^ byte(key[3], 3)] ^ byte(key[2], 3)] ^ byte(key[1], 3)] ^ byte(key[0], 3)];
+            pkey.mk_tab[0][i] = pkey.m_tab[0][pkey.q_tab[0][pkey.q_tab[0][pkey.q_tab[1][pkey.q_tab[1][by] ^ byte(key[3],
+                                                                                                                 0)] ^ byte(
+                key[2], 0)] ^ byte(key[1], 0)] ^ byte(key[0], 0)];
+            pkey.mk_tab[1][i] = pkey.m_tab[1][pkey.q_tab[0][pkey.q_tab[1][pkey.q_tab[1][pkey.q_tab[0][by] ^ byte(key[3],
+                                                                                                                 1)] ^ byte(
+                key[2], 1)] ^ byte(key[1], 1)] ^ byte(key[0], 1)];
+            pkey.mk_tab[2][i] = pkey.m_tab[2][pkey.q_tab[1][pkey.q_tab[0][pkey.q_tab[0][pkey.q_tab[0][by] ^ byte(key[3],
+                                                                                                                 2)] ^ byte(
+                key[2], 2)] ^ byte(key[1], 2)] ^ byte(key[0], 2)];
+            pkey.mk_tab[3][i] = pkey.m_tab[3][pkey.q_tab[1][pkey.q_tab[1][pkey.q_tab[0][pkey.q_tab[1][by] ^ byte(key[3],
+                                                                                                                 3)] ^ byte(
+                key[2], 3)] ^ byte(key[1], 3)] ^ byte(key[0], 3)];
+
 
 def h_fun(pkey, x, key):
     b0 = byte(x, 0);
@@ -257,8 +275,9 @@ def h_fun(pkey, x, key):
         b0 = pkey.q_tab[0][pkey.q_tab[0][b0] ^ byte(key[1], 0)] ^ byte(key[0], 0);
         b1 = pkey.q_tab[0][pkey.q_tab[1][b1] ^ byte(key[1], 1)] ^ byte(key[0], 1);
         b2 = pkey.q_tab[1][pkey.q_tab[0][b2] ^ byte(key[1], 2)] ^ byte(key[0], 2);
-        b3 = pkey.q_tab[1][pkey.q_tab[1][b3] ^ byte(key[1], 3)] ^ byte(key[0], 3);      
-    return pkey.m_tab[0][b0] ^ pkey.m_tab[1][b1] ^ pkey.m_tab[2][b2] ^ pkey.m_tab[3][b3];   
+        b3 = pkey.q_tab[1][pkey.q_tab[1][b3] ^ byte(key[1], 3)] ^ byte(key[0], 3);
+    return pkey.m_tab[0][b0] ^ pkey.m_tab[1][b1] ^ pkey.m_tab[2][b2] ^ pkey.m_tab[3][b3];
+
 
 def mds_rem(p0, p1):
     i, t, u = 0, 0, 0
@@ -276,6 +295,7 @@ def mds_rem(p0, p1):
         p1 ^= ((u << 24) & 0xffffffff) | ((u << 8) & 0xffffffff)
     return p1
 
+
 def set_key(pkey, in_key, key_len):
     pkey.qt_gen = 0
     if not pkey.qt_gen:
@@ -289,16 +309,16 @@ def set_key(pkey, in_key, key_len):
 
     a = 0
     b = 0
-    me_key = [0,0,0,0]
-    mo_key = [0,0,0,0]
+    me_key = [0, 0, 0, 0]
+    mo_key = [0, 0, 0, 0]
     for i in xrange(pkey.k_len):
         if WORD_BIGENDIAN:
             a = byteswap32(in_key[i + 1])
-            me_key[i] = a            
+            me_key[i] = a
             b = byteswap32(in_key[i + i + 1])
         else:
             a = in_key[i + i]
-            me_key[i] = a            
+            me_key[i] = a
             b = in_key[i + i + 1]
         mo_key[i] = b
         pkey.s_key[pkey.k_len - i - 1] = mds_rem(a, b);
@@ -310,6 +330,7 @@ def set_key(pkey, in_key, key_len):
         pkey.l_key[i] = (a + b) % 0x100000000;
         pkey.l_key[i + 1] = rotl32((a + 2 * b) % 0x100000000, 9);
     gen_mk_tab(pkey, pkey.s_key)
+
 
 def encrypt(pkey, in_blk):
     blk = [0, 0, 0, 0]
@@ -323,20 +344,24 @@ def encrypt(pkey, in_blk):
         blk[0] = in_blk[0] ^ pkey.l_key[0];
         blk[1] = in_blk[1] ^ pkey.l_key[1];
         blk[2] = in_blk[2] ^ pkey.l_key[2];
-        blk[3] = in_blk[3] ^ pkey.l_key[3];        
+        blk[3] = in_blk[3] ^ pkey.l_key[3];
 
     for i in xrange(8):
-        t1 = ( pkey.mk_tab[0][byte(blk[1],3)] ^ pkey.mk_tab[1][byte(blk[1],0)] ^ pkey.mk_tab[2][byte(blk[1],1)] ^ pkey.mk_tab[3][byte(blk[1],2)] ); 
-        t0 = ( pkey.mk_tab[0][byte(blk[0],0)] ^ pkey.mk_tab[1][byte(blk[0],1)] ^ pkey.mk_tab[2][byte(blk[0],2)] ^ pkey.mk_tab[3][byte(blk[0],3)] );
-        
+        t1 = (pkey.mk_tab[0][byte(blk[1], 3)] ^ pkey.mk_tab[1][byte(blk[1], 0)] ^ pkey.mk_tab[2][byte(blk[1], 1)] ^
+              pkey.mk_tab[3][byte(blk[1], 2)]);
+        t0 = (pkey.mk_tab[0][byte(blk[0], 0)] ^ pkey.mk_tab[1][byte(blk[0], 1)] ^ pkey.mk_tab[2][byte(blk[0], 2)] ^
+              pkey.mk_tab[3][byte(blk[0], 3)]);
+
         blk[2] = rotr32(blk[2] ^ ((t0 + t1 + pkey.l_key[4 * (i) + 8]) % 0x100000000), 1);
         blk[3] = rotl32(blk[3], 1) ^ ((t0 + 2 * t1 + pkey.l_key[4 * (i) + 9]) % 0x100000000);
 
-        t1 = ( pkey.mk_tab[0][byte(blk[3],3)] ^ pkey.mk_tab[1][byte(blk[3],0)] ^ pkey.mk_tab[2][byte(blk[3],1)] ^ pkey.mk_tab[3][byte(blk[3],2)] ); 
-        t0 = ( pkey.mk_tab[0][byte(blk[2],0)] ^ pkey.mk_tab[1][byte(blk[2],1)] ^ pkey.mk_tab[2][byte(blk[2],2)] ^ pkey.mk_tab[3][byte(blk[2],3)] );
-        
+        t1 = (pkey.mk_tab[0][byte(blk[3], 3)] ^ pkey.mk_tab[1][byte(blk[3], 0)] ^ pkey.mk_tab[2][byte(blk[3], 1)] ^
+              pkey.mk_tab[3][byte(blk[3], 2)]);
+        t0 = (pkey.mk_tab[0][byte(blk[2], 0)] ^ pkey.mk_tab[1][byte(blk[2], 1)] ^ pkey.mk_tab[2][byte(blk[2], 2)] ^
+              pkey.mk_tab[3][byte(blk[2], 3)]);
+
         blk[0] = rotr32(blk[0] ^ ((t0 + t1 + pkey.l_key[4 * (i) + 10]) % 0x100000000), 1);
-        blk[1] = rotl32(blk[1], 1) ^ ((t0 + 2 * t1 + pkey.l_key[4 * (i) + 11]) % 0x100000000);         
+        blk[1] = rotl32(blk[1], 1) ^ ((t0 + 2 * t1 + pkey.l_key[4 * (i) + 11]) % 0x100000000);
 
     if WORD_BIGENDIAN:
         in_blk[0] = byteswap32(blk[2] ^ pkey.l_key[4]);
@@ -348,12 +373,13 @@ def encrypt(pkey, in_blk):
         in_blk[1] = blk[3] ^ pkey.l_key[5];
         in_blk[2] = blk[0] ^ pkey.l_key[6];
         in_blk[3] = blk[1] ^ pkey.l_key[7];
-        
+
     return
+
 
 def decrypt(pkey, in_blk):
     blk = [0, 0, 0, 0]
-    
+
     if WORD_BIGENDIAN:
         blk[0] = byteswap32(in_blk[0]) ^ pkey.l_key[4];
         blk[1] = byteswap32(in_blk[1]) ^ pkey.l_key[5];
@@ -363,20 +389,24 @@ def decrypt(pkey, in_blk):
         blk[0] = in_blk[0] ^ pkey.l_key[4];
         blk[1] = in_blk[1] ^ pkey.l_key[5];
         blk[2] = in_blk[2] ^ pkey.l_key[6];
-        blk[3] = in_blk[3] ^ pkey.l_key[7];    
+        blk[3] = in_blk[3] ^ pkey.l_key[7];
 
     for i in xrange(7, -1, -1):
-        t1 = ( pkey.mk_tab[0][byte(blk[1],3)] ^ pkey.mk_tab[1][byte(blk[1],0)] ^ pkey.mk_tab[2][byte(blk[1],1)] ^ pkey.mk_tab[3][byte(blk[1],2)] )
-        t0 = ( pkey.mk_tab[0][byte(blk[0],0)] ^ pkey.mk_tab[1][byte(blk[0],1)] ^ pkey.mk_tab[2][byte(blk[0],2)] ^ pkey.mk_tab[3][byte(blk[0],3)] )
+        t1 = (pkey.mk_tab[0][byte(blk[1], 3)] ^ pkey.mk_tab[1][byte(blk[1], 0)] ^ pkey.mk_tab[2][byte(blk[1], 1)] ^
+              pkey.mk_tab[3][byte(blk[1], 2)])
+        t0 = (pkey.mk_tab[0][byte(blk[0], 0)] ^ pkey.mk_tab[1][byte(blk[0], 1)] ^ pkey.mk_tab[2][byte(blk[0], 2)] ^
+              pkey.mk_tab[3][byte(blk[0], 3)])
 
         blk[2] = rotl32(blk[2], 1) ^ ((t0 + t1 + pkey.l_key[4 * (i) + 10]) % 0x100000000)
         blk[3] = rotr32(blk[3] ^ ((t0 + 2 * t1 + pkey.l_key[4 * (i) + 11]) % 0x100000000), 1)
 
-        t1 = ( pkey.mk_tab[0][byte(blk[3],3)] ^ pkey.mk_tab[1][byte(blk[3],0)] ^ pkey.mk_tab[2][byte(blk[3],1)] ^ pkey.mk_tab[3][byte(blk[3],2)] )
-        t0 = ( pkey.mk_tab[0][byte(blk[2],0)] ^ pkey.mk_tab[1][byte(blk[2],1)] ^ pkey.mk_tab[2][byte(blk[2],2)] ^ pkey.mk_tab[3][byte(blk[2],3)] )
+        t1 = (pkey.mk_tab[0][byte(blk[3], 3)] ^ pkey.mk_tab[1][byte(blk[3], 0)] ^ pkey.mk_tab[2][byte(blk[3], 1)] ^
+              pkey.mk_tab[3][byte(blk[3], 2)])
+        t0 = (pkey.mk_tab[0][byte(blk[2], 0)] ^ pkey.mk_tab[1][byte(blk[2], 1)] ^ pkey.mk_tab[2][byte(blk[2], 2)] ^
+              pkey.mk_tab[3][byte(blk[2], 3)])
 
         blk[0] = rotl32(blk[0], 1) ^ ((t0 + t1 + pkey.l_key[4 * (i) + 8]) % 0x100000000)
-        blk[1] = rotr32(blk[1] ^ ((t0 + 2 * t1 + pkey.l_key[4 * (i) + 9]) % 0x100000000), 1)        
+        blk[1] = rotr32(blk[1] ^ ((t0 + 2 * t1 + pkey.l_key[4 * (i) + 9]) % 0x100000000), 1)
 
     if WORD_BIGENDIAN:
         in_blk[0] = byteswap32(blk[2] ^ pkey.l_key[0]);
@@ -389,6 +419,7 @@ def decrypt(pkey, in_blk):
         in_blk[2] = blk[0] ^ pkey.l_key[2];
         in_blk[3] = blk[1] ^ pkey.l_key[3];
     return
+
 
 __testkey = '\xD4\x3B\xB7\x55\x6E\xA3\x2E\x46\xF2\xA2\x82\xB7\xD4\x5B\x4E\x0D\x57\xFF\x73\x9D\x4D\xC9\x2C\x1B\xD7\xFC\x01\x70\x0C\xC8\x21\x6F'
 __testdat = '\x90\xAF\xE9\x1B\xB2\x88\x54\x4F\x2C\x32\xDC\x23\x9B\x26\x35\xE6'
