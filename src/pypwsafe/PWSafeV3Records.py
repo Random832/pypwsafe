@@ -28,7 +28,7 @@
 from struct import unpack, pack
 import calendar, time
 import logging, logging.config
-from errors import *
+from .errors import *
 import os
 from uuid import UUID, uuid4
 import datetime
@@ -39,6 +39,10 @@ psafe_logger.debug('initing')
 
 RecordPropTypes = {}
 
+try: xrange
+except NameError: xrange = range
+try: unicode
+except NameError: unicode = str
 
 class Record(object):
     """Represents a psafe3 record
@@ -135,7 +139,7 @@ class Record(object):
 
     def serialiaze(self):
         """ """
-        ret = ''
+        ret = b''
         for r in self.records:
             ret += r.serialiaze()
         return ret
@@ -454,11 +458,11 @@ class RecordProp(_RecordPropMetaBase):
 
     def _pad(self, data):
         """ Pad out data to 16 bytes """
-        assert isinstance(data, str)
+        assert isinstance(data, bytes)
         add_data = 16 - len(data) % 16
         if add_data == 16:
             add_data = 0
-        padding = ''
+        padding = b''
         for i in xrange(0, add_data):
             padding += self._rand_char()
         assert add_data != 16
@@ -475,8 +479,8 @@ class RecordProp(_RecordPropMetaBase):
     def serialiaze(self):
         """Returns the raw data blocks to generate this object. """
         serial = self.serial()
-        assert isinstance(serial, str)
-        header = pack('=lc', len(serial), chr(self.rTYPE))
+        assert isinstance(serial, bytes)
+        header = pack('=lB', len(serial), self.rTYPE)
         padded = self._pad(header + serial)
         psafe_logger.debug("Padded output %s" % repr(padded))
         return padded
@@ -1138,7 +1142,7 @@ where:
             RecordProp.__init__(self, ptype, plen, pdata)
 
     def serial(self):
-        ret = ''
+        ret = b''
         if self.enabled:
             ret += "1"
         else:

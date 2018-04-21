@@ -26,8 +26,8 @@
 # Note: Use "=" in all packs to account for 64bit systems
 
 from struct import unpack, pack
-from errors import *
-from consts import *
+from .errors import *
+from .consts import *
 import os
 import logging, logging.config
 from uuid import UUID, uuid4
@@ -40,6 +40,15 @@ log.debug('initing')
 
 headers = {}
 
+try: xrange
+except NameError: xrange = range
+try: unicode
+except NameError: unicode = str
+def BYTES(s):
+    if isinstance(s, bytes):
+        return s
+    elif isinstance(s, unicode):
+        return s.encode('utf-8')
 
 class _HeaderType(type):
     def __init__(cls, name, bases, dct):
@@ -108,8 +117,8 @@ class Header(_HeaderMetaBase):
     def serialiaze(self):
         serial = self.serial()
         log.debug("len: %s type: %s final: %s" % (
-            len(serial), repr(chr(self.TYPE)), repr(pack('=lc', len(serial), chr(self.TYPE)))))
-        padded = self._pad(pack('=lc', len(serial), chr(self.TYPE)) + serial)
+            len(serial), repr(self.TYPE), repr(pack('=lB', len(serial), self.TYPE))))
+        padded = self._pad(pack('=lB', len(serial), self.TYPE) + serial)
         log.debug("Padded data %s" % repr(padded))
         return padded
 
@@ -118,7 +127,7 @@ class Header(_HeaderMetaBase):
         add_data = 16 - len(data) % 16
         if add_data == 16:
             add_data = 0
-        padding = ''
+        padding = b''
         for i in xrange(0, add_data):
             padding += os.urandom(1)
         assert len(padding) == add_data
@@ -320,11 +329,14 @@ K:V for opts:
         return "NonDefaultPrefs=%s" % pformat(self.opts)
 
     def serial(self):
-        ret = ''
+        ret = b''
         for name, value in self.opts.items():
             if name not in conf_types:
                 raise PrefsValueError("%r is not a valid configuration option" % name)
             typ = conf_types[name]
+            if typ == str:
+                typ = bytes
+                value = BYTES(value)
             if type(value) != typ:
                 raise PrefsDataTypeError("%r is not a valid type for the key %r" % (type(value), name))
             if typ == bool:
@@ -337,31 +349,31 @@ K:V for opts:
                     value = 0
                 else:
                     raise PrefsDataTypeError("%r is not a valid value for the key %r" % (value, name))
-                ret += "B %d %d " % (conf_bools[name]['index'], value)
+                ret += b"B %d %d " % (conf_bools[name]['index'], value)
             elif typ == int:
                 value = int(value)
                 if value == conf_ints[name]['default']:
                     # Default value - Don't save
                     continue
-                ret += "I %d %d " % (conf_ints[name]['index'], value)
-            elif typ == str:
-                value = str(value)
-                if value == conf_strs[name]['default']:
+                ret += b"I %d %d " % (conf_ints[name]['index'], value)
+            elif typ == bytes:
+                if value == BYTES(conf_strs[name]['default']):
                     # Default value - Don't save
                     continue
-                delms = list("\"'#?!%&*+=:;@~<>?,.{}[]()\xbb")
+                delms = b"\"'#?!%&*+=:;@~<>?,.{}[]()\xbb"
                 delm = None
-                while delm is None and len(delms) > 0:
-                    if not delms[0] in value:
-                        delm = delms[0]
-                    else:
-                        del delms[0]
+                for delm0 in delms:
+                    if delm0 not in value:
+                        delm = delm0
+                        break
+                if type(delm) is int:
+                    delm = bytes(delm)
                 if not delm:
                     raise UnableToFindADelimitersError("Couldn't find a delminator for %r" % value)
-                ret += "S %d %s%s%s " % (conf_strs[name]['index'], delm, value, delm)
+                ret += b"S %d %s%s%s " % (conf_strs[name]['index'], delm, value, delm)
             else:
                 raise PrefsDataTypeError("Unexpected record type for preferences %r" % typ)
-        if ret.endswith(' '):
+        if ret.endswith(b' '):
             ret = ret[:-1]
         return ret
 
@@ -752,7 +764,7 @@ class NamedPasswordPoliciesHeader(Header):
         return "NamedPasswordPolicies(count=%d)" % len(self.namedPasswordPolicies)
 
     def serial(self):
-        ret = '%02x' % len(self.namedPasswordPolicies)
+        ret = b'%02x' % len(self.namedPasswordPolicies)
         for policy in self.namedPasswordPolicies:
             flags = 0
             if policy.useLowercase:
@@ -770,13 +782,13 @@ class NamedPasswordPoliciesHeader(Header):
             if policy.makePronounceable:
                 flags = flags | self.MAKEPRONOUNCEABLE
             if policy.useEasyVision and policy.allowedSpecialSymbols == DEFAULT_EASY_SPECIAL_CHARS:
-                allowedSpecialSymbols = ''
+                allowedSpecialSymbols = b''
             elif not policy.useEasyVision and policy.allowedSpecialSymbols == DEFAULT_SPECIAL_CHARS:
-                allowedSpecialSymbols = ''
+                allowedSpecialSymbols = b''
             else:
-                allowedSpecialSymbols = policy.allowedSpecialSymbols
+                allowedSpecialSymbols = BYTES(policy.allowedSpecialSymbols)
             name = policy.name.encode('utf-8')
-            ret += '%02x%s%04x%03x%03x%03x%03x%03x%02x%s' % (
+            ret += b'%02x%s%04x%03x%03x%03x%03x%03x%02x%s' % (
                 len(name),
                 name,
                 flags,
@@ -907,9 +919,9 @@ class RecentEntriesHeader(Header):
         return "RecentEntriesHeader(%r)" % self.recentEntries
 
     def serial(self):
-        packed = ['%02x' % len(self.recentEntries[:255])]
-        packed.extend(uuid.hex for uuid in self.recentEntries[:255])
-        return ''.join(packed)
+        packed = [b'%02x' % len(self.recentEntries[:255])]
+        packed.extend(BYTES(uuid.hex) for uuid in self.recentEntries[:255])
+        return b''.join(packed)
 
 
 class EmptyGroupHeader(Header):
@@ -980,8 +992,7 @@ def Create_Header(fetchblock_f):
     """
     firstblock = fetchblock_f(1)
     log.debug("Header of header: %s" % repr(firstblock[:5]))
-    (rlen, rtype) = unpack('=lc', firstblock[:5])
-    rtype = ord(rtype)
+    (rlen, rtype) = unpack('=lB', firstblock[:5])
     data = firstblock[5:]
     log.debug("Rtype: %s Len: %s" % (rtype, rlen))
     if rlen > len(data):

@@ -35,10 +35,10 @@ log = logging.getLogger("psafe.lib.init")
 log.debug('initing')
 
 # PyPWSafe modules we need
-from crypt import *
-from PWSafeV3Headers import *
-from PWSafeV3Records import *
-from errors import *
+from .crypt import *
+from .PWSafeV3Headers import *
+from .PWSafeV3Records import *
+from .errors import *
 
 # Some 2/3 compat infra
 def BYTES(s):
@@ -302,7 +302,7 @@ class PWSafe3(object):
             , self.iv
         )
         log.debug("Pre-header flfull now %s", (self.flfull,))
-        self.fulldata = ''
+        self.fulldata = b''
         for header in self.headers:
             self.fulldata += header.serialiaze()
             # log.debug("In header flfull now %s",(self.flfull,))
