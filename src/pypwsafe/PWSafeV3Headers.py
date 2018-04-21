@@ -618,7 +618,7 @@ class NamedPasswordPolicy(dict):
         if attr in self:
             return self[attr]
         else:
-            return dict.__getattribute__(self, attr=attr)
+            return dict.__getattribute__(self, attr)
 
     def __setattr__(self, attr, value):
         if attr in self:
