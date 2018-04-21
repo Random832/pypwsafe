@@ -7,10 +7,16 @@ Created on Feb 18, 2013
 '''
 import logging
 
-
-def xor(s1, s2):
-    assert len(s1) == len(s2)
-    return ''.join(chr(ord(a) ^ ord(b)) for a, b in zip(s1, s2))
+if type(b'x'[0]) is int:
+    def xor(s1, s2):
+        "Python 3 version of XOR function"
+        assert len(s1) == len(s2)
+        return bytes(a ^ b for a, b in zip(s1, s2))
+else:
+    def xor(s1, s2):
+        "Python 2 version of XOR function"
+        assert len(s1) == len(s2)
+        return ''.join(chr(ord(a) ^ ord(b)) for a, b in zip(s1, s2))
 
 
 class TwofishCBCEncryption(object):
@@ -50,7 +56,7 @@ class TwofishCBCDecryption(object):
 
     def decrypt(self, blocks):
         assert len(blocks) % 16 == 0, "Expected cipher text length to be a multiple of 16. Got %r. " % len(blocks)
-        ret = ''
+        ret = b''
         while len(blocks) > 0:
             block = blocks[:16]
             blocks = blocks[16:]

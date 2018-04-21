@@ -34,7 +34,7 @@ from uuid import UUID, uuid4
 import datetime
 # logging.config.fileConfig('/etc/mss/psafe_log.conf')
 psafe_logger = logging.getLogger("psafe.lib.record")
-psafe_logger.setLevel(logging.DEBUG)  # FIXME: REMOVE ME
+# psafe_logger.setLevel(logging.DEBUG)  # FIXME: REMOVE ME
 psafe_logger.debug('initing')
 
 RecordPropTypes = {}
@@ -124,8 +124,9 @@ class Record(object):
 
     def hmac_data(self):
         """Returns the data required for the "broken" hmac in psafe3. See bug 1812081. """
-        ret = ''
+        ret = b''
         for i in self.records:
+            psafe_logger.debug("Adding hmac data %r from %r" % (i.serial(), i.__class__.__name__))
             # the data field has the data minus the padding
             # if i.serial()!=i.data:
             #    psafe_logger.warn('Serial != data for class %s. s: %s d: %s'%(repr(i.__class__),repr(i.serial()),repr(i.data)))
@@ -392,8 +393,13 @@ class _RecordPropType(type):
             RecordPropTypes[cls.rTYPE] = cls
 
 
+# Ugly hack to make metaclass work on py2/3
+_RecordPropMetaBase = _RecordPropType("_Metaclass_Helper", (object,), {'rTYPE': None})
+
+
 # Record Prop
-class RecordProp(object):
+# Auto-register all declared classes with metaclass
+class RecordProp(_RecordPropMetaBase):
     """A single property of a psafe3 record. This represents an unknown type or is overridden by records of a known type.
     rTYPE        int        Properity type. May be null.
     rNAME        string        Code name of properity type.
@@ -402,8 +408,6 @@ class RecordProp(object):
     raw_data    string        Record data including padding and headers
     data        string        Record data minus headers and padding
     """
-    # Auto-register all declared classes
-    __metaclass__ = _RecordPropType
 
     rTYPE = None
     rNAME = "Unknown"
@@ -415,8 +419,8 @@ class RecordProp(object):
         else:
             self.rTYPE = ptype
         self.len = plen
-        self.raw_data = str(pdata)
-        self.data = str(pdata[5:(plen + 5)])
+        self.raw_data = bytes(pdata)
+        self.data = bytes(pdata[5:(plen + 5)])
         psafe_logger.debug('Created psafe record prop with rTYPE of %s. Class %s', repr(self.rTYPE),
                            repr(self.__class__))
         self.parse()
@@ -523,7 +527,8 @@ class UUIDRecordProp(RecordProp):
 
     def serial(self):
         # psafe_logger.debug("Serial to %s",repr(pack('=16s',str(self.uuid.bytes))))
-        return pack('=16s', str(self.uuid.bytes))
+        # WHY return pack('=16s', str(self.uuid.bytes))
+        return pack('=16s', self.uuid.bytes)
 
 
 class GroupRecordProp(RecordProp):
@@ -571,7 +576,7 @@ class GroupRecordProp(RecordProp):
         self.group = list(value)
 
     def serial(self):
-        self.group_str = '.'.join([grp.encode('utf-8') for grp in self.group])
+        self.group_str = b'.'.join([grp.encode('utf-8') for grp in self.group])
         # psafe_logger.debug("Serial to %s Data %s"%(repr(self.group_str),repr(self.data)))
         return self.group_str
 
@@ -1170,17 +1175,17 @@ where:
             try:
                 self.maxsize = int(self.data[1:3], 16)
             except ValueError:
-                raise PropParsingError, "Invalid maxsize type %s" % repr(self.data[1:3])
+                raise PropParsingError("Invalid maxsize type %s" % repr(self.data[1:3]))
             if self.maxsize < 0 or self.maxsize > 255:
-                raise PropParsingError, "Invalid maxsize value %s" % repr(self.data[1:3])
+                raise PropParsingError("Invalid maxsize value %s" % repr(self.data[1:3]))
             psafe_logger.debug("Set password history max size to %d", self.maxsize)
             # Current size of hist list
             try:
                 self._cursize = int(self.data[3:5], 16)
             except ValueError:
-                raise PropParsingError, "Invalid cursize type %s" % repr(self.data[3:5])
+                raise PropParsingError("Invalid cursize type %s" % repr(self.data[3:5]))
             if self._cursize < 0 or self._cursize > 255:
-                raise PropParsingError, "Invalid cursize value %s" % repr(self.data[3:5])
+                raise PropParsingError("Invalid cursize value %s" % repr(self.data[3:5]))
             psafe_logger.debug("Set current size of password history to %d", self._cursize)
             # FIXME: Should this end at self.len? 
             try:
@@ -1332,7 +1337,7 @@ where:
             flags = flags | self.USEEASYVERSION
         if self.makepron:
             flags = flags | self.MAKEPRONOUNCEABLE
-        ret = '%04x%03x%03x%03x%03x%03x' % (flags, self.ttllen, self.minlow, self.minup, self.mindig, self.minsym)
+        ret = b'%04x%03x%03x%03x%03x%03x' % (flags, self.ttllen, self.minlow, self.minup, self.mindig, self.minsym)
         # psafe_logger.debug("Serial to %s data %s"%(repr(ret),repr(self.data)))    
         return ret
 
@@ -1826,10 +1831,10 @@ class EOERecordProp(RecordProp):
         return ''
 
     def set(self, value):
-        raise ValueError, "Can't set data to the EOE record"
+        raise ValueError("Can't set data to the EOE record")
 
     def serial(self):
-        return ''
+        return b''
 
 
 def parsedatetime(data):
@@ -1852,7 +1857,7 @@ def Create_Prop(fetchblock_f):
     psafe_logger.debug('rtype %s rlen %s' % (rTYPE, rlen))
     data = firstblock[5:]
     if rlen > len(data):
-        data += fetchblock_f(((rlen - len(data) - 1) / 16) + 1)
+        data += fetchblock_f(((rlen - len(data) - 1) // 16) + 1)
     assert rlen <= len(data)
     # print "Creating records with %s"%repr((rTYPE,rlen,data,len(data)))
     # Lazy way to add the header data back

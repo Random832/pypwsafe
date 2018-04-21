@@ -25,7 +25,7 @@
 """
 
 
-class PSafeError(StandardError):
+class PSafeError(Exception):
     """Base passsafe error"""
 
 

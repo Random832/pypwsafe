@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 #===============================================================================
 # This file is part of PyPWSafe.
 #
@@ -15,6 +15,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with PyPWSafe.  If not, see http://www.gnu.org/licenses/old-licenses/gpl-2.0.html 
 #===============================================================================
+from __future__ import print_function
 ''' A CLI interface for PyPWSafe. 
 
 Allow users to view Password Safe files. 
@@ -71,13 +72,12 @@ def show_entry(entry, opts):
         
     return True
     
-def display_xml(entries, opts):
+def display_xml(entries, opts, outfile):
     raise NotImplementedError
 
-from StringIO import StringIO
-from csv import DictWriter
-import datetime
-def display_csv(entries, opts):
+def display_csv(entries, opts, outfile):
+    from csv import DictWriter
+    import datetime
     csvFields = [
                'Group',
                'Title',
@@ -96,16 +96,13 @@ def display_csv(entries, opts):
     by_groups = {}
     for entry in entries:
         group = '.'.join(entry['Group'])
-        if not by_groups.has_key(group):
+        if group not in by_groups:
             by_groups[group] = []
         by_groups[group].append(entry)
-    groups = by_groups.keys()
-    groups.sort()
-    csvString = StringIO()
-    c = DictWriter(csvString, csvFields)
+    c = DictWriter(outfile, csvFields)
     c.writerow(dict(zip(csvFields, csvFields)))
-    for group in groups:
-        by_groups[group].sort(lambda a, b: cmp(a['Title'] + a['Username'], b['Title'] + b['Username']))
+    for group in sorted(by_groups):
+        by_groups[group].sort(key=lambda x: x['Title'] + x['Username'])
         for entry in by_groups[group]:
             policy = entry['PasswordPolicy']
             history = []
@@ -128,23 +125,19 @@ def display_csv(entries, opts):
                        # TODO: Add in support for creating new rows for each history entry
                        'History':';'.join(history),
                         })            
-    return csvString.getvalue()
 
-def display_display(entries, opts):
+def display_display(entries, opts, outfile):
     ret = ''
     # Group by group
     by_groups = {}
     for entry in entries:
         group = '.'.join(entry['Group'])
-        if not by_groups.has_key(group):
+        if group not in by_groups:
             by_groups[group] = []
         by_groups[group].append(entry)
-    groups = by_groups.keys()
-    # In place!
-    groups.sort()
-    for group in groups:
+    for group in sorted(by_groups):
         ret += "= %r =\n" % group
-        by_groups[group].sort(lambda a, b: cmp(a['Title'] + a['Username'], b['Title'] + b['Username']))
+        by_groups[group].sort(key=lambda x: x['Title'] + x['Username'])
         for entry in by_groups[group]:
             ret += """    == %(Title)r ==
         Username: %(Username)r
@@ -153,8 +146,7 @@ def display_display(entries, opts):
         URL: %(URL)r
         AutoType: %(Autotype)r
 """ % entry
-    return ret
-        
+    print(ret, file=outfile)
     
 if __name__ == "__main__":
     # Setup option parser to parse out args
@@ -313,9 +305,9 @@ A CLI interface for viewing Password Safe files.
             to_display.append(entry)
 
     if opts.xml:
-        print display_xml(to_display, opts)
+        display_xml(to_display, opts, sys.stdout)
     elif opts.csv:
-        print display_csv(to_display, opts)
+        display_csv(to_display, opts, sys.stdout)
     elif opts.display:
-        print display_display(to_display, opts)    
+        display_display(to_display, opts, sys.stdout)
     

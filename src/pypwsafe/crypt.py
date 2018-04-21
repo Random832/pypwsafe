@@ -17,19 +17,19 @@ class SHA256(object):
             from hashlib import sha256 as sha256_func
             self.hsh = sha256_func()
             self.mode = "Python 2.6"
-        except Exception, e:
+        except Exception as e:
             self.log.warn("Failed to import FIXME libs with %r", e)
             try:
                 from hashlib import sha256_func  # @UnresolvedImport @Reimport
                 self.hsh = sha256_func()
                 self.mode = "Python 2.5"  # FIXME: Validate
-            except Exception, e:
+            except Exception as e:
                 self.log.warn("Failed to import FIXME libs with %r", e)
                 try:
                     from Crypto.Hash.SHA256 import new as sha256_func  # @UnresolvedImport @Reimport
                     self.hsh = sha256_func()
                     self.mode = "Python 2.4"  # FIXME: Validate
-                except Exception, e:
+                except Exception as e:
                     self.log.warn("Failed to import FIXME libs with %r", e)
                     raise ImportError("Failed to find a valid SHA256 library")
 
@@ -87,7 +87,7 @@ class SHA256HMAC(object):
             from hmac import new as HMAC
             self.mode = "Python ???"
             self.hmac = HMAC(self.key, self.data, sha256_func)
-        except Exception, e:
+        except Exception as e:
             self.log.warn("Failed to import vFIXME libs with %r", e)
 
     def python25(self):
@@ -98,7 +98,7 @@ class SHA256HMAC(object):
             from hmac import new as HMAC
             self.mode = "Python 2.4"
             self.hmac = HMAC(self.key, self.data, sha256_func)
-        except Exception, e:
+        except Exception as e:
             self.log.warn("Failed to import v2.4 libs with %r", e)
 
     def python26(self):
@@ -108,7 +108,7 @@ class SHA256HMAC(object):
             self.mode = "Python 2.6"
             self.hmac = HMAC(self.key, self.data, sha256_func)
             return True
-        except Exception, e:
+        except Exception as e:
             self.log.warn("Failed to import v2.6 libs with %r", e)
             return False
 
@@ -125,7 +125,7 @@ class TwofishECBCEncryption(object):
             self.twf = MCRYPT('twofish', 'ecb')
             self.twf.init(self.key)
             self.mode = 'Native (MCrypt)'
-        except Exception, e:
+        except Exception as e:
             self.log.warn("Failed to import native Twofish implementation with %r" % e)
             self.log.debug("Falling back to pure-Python Twofish library")
             from twofish import Twofish
@@ -164,7 +164,7 @@ class TwofishECBCDecryption(object):
             self.twf = MCRYPT('twofish', 'ecb')
             self.twf.init(self.key)
             self.mode = 'Native (MCrypt)'
-        except Exception, e:
+        except Exception as e:
             self.log.warn("Failed to import native Twofish implementation with %r" % e)
             self.log.debug("Falling back to pure-Python Twofish library")
             from twofish import Twofish
@@ -191,7 +191,7 @@ class TwofishCBCEncryption(object):
             self.twf = MCRYPT('twofish', 'cbc')
             self.twf.init(self.key, self.iv)
             self.mode = 'Native (MCrypt)'
-        except Exception, e:
+        except Exception as e:
             self.log.warn("Failed to import native Twofish implementation with %r" % e)
             self.log.debug("Falling back to pure-Python Twofish library")
             from twofishcbc import TwofishCBCEncryption
@@ -233,7 +233,7 @@ class TwofishCBCDecryption(object):
             self.twf = MCRYPT('twofish', 'cbc')
             self.twf.init(self.key, self.iv)
             self.mode = 'Native (MCrypt)'
-        except Exception, e:
+        except Exception as e:
             self.log.warn("Failed to import native Twofish implementation with %r" % e)
             self.log.debug("Falling back to pure-Python Twofish library")
             from twofishcbc import TwofishCBCDecryption

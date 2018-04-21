@@ -1,5 +1,6 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
+from __future__ import print_function
 import copy
 from mock import Mock
 from nose.tools import assert_equals
@@ -119,7 +120,7 @@ class TestCommandLine(object):
 
     def test_get_missing_options(self):
         for cmdline in ("unittest get --file foo", "unittest get --file foo --email foo@bar"):
-            print cmdline
+            print(cmdline)
             options = pwsafecli.parse_commandline(self.parsers,
                                                  cmdline.split())
             with AssertRaises(pwsafecli.PWSafeCLIValidationError):

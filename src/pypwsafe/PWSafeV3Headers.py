@@ -51,7 +51,12 @@ class _HeaderType(type):
             headers[cls.TYPE] = cls
 
 
-class Header(object):
+# Ugly hack to make metaclass work on py2/3
+_HeaderMetaBase = _HeaderType("_Metaclass_Helper", (object,), {'TYPE': None})
+
+
+# Metaclass to auto-register new classes
+class Header(_HeaderMetaBase):
     """A psafe3 header object. Should be extended. This also servers as a "unknown" header type.
     raw_data    string        Real data that was passed
     data        string        Raw data minus padding and headers
@@ -60,14 +65,12 @@ class Header(object):
     TYPE        int        Header type that IDs it in psafe3
 
     """
-    # Auto-register new classes
-    __metaclass__ = _HeaderType
 
     TYPE = None
     FIELD = None
 
     def __init__(self, htype, hlen, raw_data):
-        self.data = str(raw_data[5:(hlen + 5)])
+        self.data = bytes(raw_data[5:(hlen + 5)])
         self.raw_data = raw_data
         self.len = int(hlen)
         if type(self) != Header:
@@ -98,7 +101,9 @@ class Header(object):
         return self.serial()
 
     def serial(self):
-        return self.data.encode('utf-8')
+        assert type(self.data) is bytes
+        # WHY return self.data.encode('utf-8')
+        return self.data
 
     def serialiaze(self):
         serial = self.serial()
@@ -213,7 +218,8 @@ DHeader(1,16,'\x10\x00\x00\x00\x01\xbdV\x92{H\xdbL\xec\xbb+\xe90w5\x17\xa2P6b\xe
         return "UUID=%s" % repr(self.uuid)
 
     def serial(self):
-        return pack('=16s', str(self.uuid.bytes))
+        # WHY return pack('=16s', str(self.uuid.bytes))
+        return self.uuid.bytes
 
 
 class NonDefaultPrefsHeader(Header):
@@ -242,12 +248,12 @@ K:V for opts:
     def parse(self):
         """Parse data"""
         self.opts = {}
-        remander = self.data.split(' ')
+        remander = self.data.split(b' ')
         while len(remander) > 2:
             # Pull out the data
-            rtype = str(remander[0])
-            key = int(remander[1])
-            value = str(remander[2])
+            rtype = remander[0].decode('ascii')
+            key = int(remander[1].decode('ascii'))
+            value = remander[2].decode('utf-8')
             del remander[0:3]
             if rtype == "B":
                 found = False
@@ -256,13 +262,13 @@ K:V for opts:
                         found = True
                         break
                 if not found:
-                    raise ConfigItemNotFoundError, "%d is not a valid configuration item" % key
+                    raise ConfigItemNotFoundError("%d is not a valid configuration item" % key)
                 if value == "0":
                     self.opts[name] = False
                 elif value == "1":
                     self.opts[name] = True
                 else:
-                    raise PrefsValueError, "Expected either 0 or 1 for bool type, got %r" % value
+                    raise PrefsValueError("Expected either 0 or 1 for bool type, got %r" % value)
             elif rtype == "I":
                 found = False
                 for name, info in conf_ints.items():
@@ -270,15 +276,15 @@ K:V for opts:
                         found = True
                         break
                 if not found:
-                    raise ConfigItemNotFoundError, "%d is not a valid configuration item" % key
+                    raise ConfigItemNotFoundError("%d is not a valid configuration item" % key)
                 try:
                     value = int(value)
                 except ValueError:
-                    raise PrefsDataTypeError, "%r is not a valid int" % value
+                    raise PrefsDataTypeError("%r is not a valid int" % value)
                 if info['min'] != -1 and info['min'] > value:
-                    raise PrefsDataTypeError, "%r is too small" % value
+                    raise PrefsDataTypeError("%r is too small" % value)
                 if info['max'] != -1 and info['max'] < value:
-                    raise PrefsDataTypeError, "%r is too big" % value
+                    raise PrefsDataTypeError("%r is too big" % value)
                 self.opts[name] = value
             elif rtype == "S":
                 found = False
@@ -287,7 +293,7 @@ K:V for opts:
                         found = True
                         break
                 if not found:
-                    raise ConfigItemNotFoundError, "%d is not a valid configuration item" % key
+                    raise ConfigItemNotFoundError("%d is not a valid configuration item" % key)
                 # Remove "" or whatever the delimiter is 
                 delm = value[0]
                 if value[-1] == delm:
@@ -300,7 +306,7 @@ K:V for opts:
                 # Save the pref
                 self.opts[name] = value
             else:
-                raise PrefsDataTypeError, "Unexpected record type for preferences %r" % rtype
+                raise PrefsDataTypeError("Unexpected record type for preferences %r" % rtype)
         # Fill in defaults prefs
         for typeS in [conf_bools, conf_ints, conf_strs]:
             for name, info in typeS.items():
@@ -317,10 +323,10 @@ K:V for opts:
         ret = ''
         for name, value in self.opts.items():
             if name not in conf_types:
-                raise PrefsValueError, "%r is not a valid configuration option" % name
+                raise PrefsValueError("%r is not a valid configuration option" % name)
             typ = conf_types[name]
             if type(value) != typ:
-                raise PrefsDataTypeError, "%r is not a valid type for the key %r" % (type(value), name)
+                raise PrefsDataTypeError("%r is not a valid type for the key %r" % (type(value), name))
             if typ == bool:
                 if value == conf_bools[name]['default']:
                     # Default value - Don't save
@@ -330,7 +336,7 @@ K:V for opts:
                 elif value is False:
                     value = 0
                 else:
-                    raise PrefsDataTypeError, "%r is not a valid value for the key %r" % (value, name)
+                    raise PrefsDataTypeError("%r is not a valid value for the key %r" % (value, name))
                 ret += "B %d %d " % (conf_bools[name]['index'], value)
             elif typ == int:
                 value = int(value)
@@ -351,10 +357,10 @@ K:V for opts:
                     else:
                         del delms[0]
                 if not delm:
-                    raise UnableToFindADelimitersError, "Couldn't find a delminator for %r" % value
+                    raise UnableToFindADelimitersError("Couldn't find a delminator for %r" % value)
                 ret += "S %d %s%s%s " % (conf_strs[name]['index'], delm, value, delm)
             else:
-                raise PrefsDataTypeError, "Unexpected record type for preferences %r" % typ
+                raise PrefsDataTypeError("Unexpected record type for preferences %r" % typ)
         if ret.endswith(' '):
             ret = ret[:-1]
         return ret
@@ -889,7 +895,7 @@ class RecentEntriesHeader(Header):
             segement = left[:LEN]
             left = left[LEN:]
             log.debug("Working with %r", segement)
-            found = UUID(segement)
+            found = UUID(segement.decode('ascii'))
             log.debug("Found UUID of %r", found)
             self.recentEntries.append(found)
         log.debug("Left over: %r", left)
@@ -951,7 +957,7 @@ class EOFHeader(Header):
 
     """
     TYPE = 0xff
-    data = ''
+    data = b''
 
     def __init__(self, htype=None, hlen=0, raw_data=''):
         if not htype:
@@ -979,7 +985,7 @@ def Create_Header(fetchblock_f):
     data = firstblock[5:]
     log.debug("Rtype: %s Len: %s" % (rtype, rlen))
     if rlen > len(data):
-        data += fetchblock_f(((rlen - len(data) - 1) / 16) + 1)
+        data += fetchblock_f(((rlen - len(data) - 1) // 16) + 1)
     assert rlen <= len(data)
     # TODO: Clean up header add back
     data = firstblock[:5] + data

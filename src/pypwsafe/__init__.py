@@ -40,6 +40,16 @@ from PWSafeV3Headers import *
 from PWSafeV3Records import *
 from errors import *
 
+# Some 2/3 compat infra
+def BYTES(s):
+    if isinstance(s, bytes):
+        return s
+    else:
+        return s.encode()
+try:
+    xrange
+except NameError:
+    xrange = range
 
 def stretchkey(passwd, salt, count):
     """
@@ -51,6 +61,7 @@ def stretchkey(passwd, salt, count):
     @param count: The number of times to repeat the stretch function
     @type count: int
     """
+    passwd = BYTES(passwd)
     assert count > 0
     # Hash once with both
     inithsh = SHA256()
@@ -195,13 +206,13 @@ class PWSafe3(object):
             self.mode = "RW"
         elif not psafe_exists and psafe_canwrite and mode != "RW":
             log.warn("Asked to create a new psafe but mode is set to RO")
-            raise AccessError, "Asked to create a new safe in RO mode"
+            raise AccessError("Asked to create a new safe in RO mode")
         elif psafe_exists:
             log.warn("Can't read safe %s" % repr(filename))
-            raise AccessError, "Can't read %s" % filename
+            raise AccessError("Can't read %s" % filename)
         else:
             log.warn("Safe doesn't exist or can't read directory")
-            raise AccessError, "No such safe %s" % filename
+            raise AccessError("No such safe %s" % filename)
         if psafe_exists:
             self.filename = filename
             log.debug("Loading existing safe from %r" % self.filename)
@@ -371,7 +382,7 @@ class PWSafe3(object):
         (self.eof, self.hmac) = unpack('16s32s', self.flfull[-48:])
         log.debug("EOF: % s" % repr(self.eof))
         log.debug("HMAC: % s" % repr(self.hmac))
-        assert self.eof == 'PWS3-EOFPWS3-EOF'
+        assert self.eof == b'PWS3-EOFPWS3-EOF'
         assert len(
             self.cryptdata) % 16 == 0, "Expected the encrypted data length to be a multiple of 16. Got %d. Data: %r" % (
         len(self.cryptdata), self.cryptdata)
@@ -408,7 +419,7 @@ class PWSafe3(object):
 
         if self.current_hmac(cached=True) != self.hmac:
             log.error('Invalid HMAC Calculated: %s File: %s' % (repr(self.current_hmac()), repr(self.hmac)))
-            raise InvalidHMACError, "Calculated: % s File: % s" % (repr(self.current_hmac()), repr(self.hmac))
+            raise InvalidHMACError("Calculated: % s File: % s" % (repr(self.current_hmac()), repr(self.hmac)))
 
     def __str__(self):
         ret = ''
@@ -421,7 +432,7 @@ class PWSafe3(object):
         assert num_blocks > 0
         numBytes = num_blocks * 16
         if numBytes > len(self.remaining_headers):
-            raise EOFError, "No more header data"
+            raise EOFError("No more header data")
         ret = self.remaining_headers[:numBytes]
         self.remaining_headers = self.remaining_headers[numBytes:]
         return ret
@@ -450,7 +461,7 @@ class PWSafe3(object):
 
     def current_hmac(self, cached=False):
         """Returns the current hmac of self.fulldata"""
-        data = ''
+        data = b''
         for i in self.headers:
             log.debug("Adding hmac data %r from %r" % (i.hmac_data(), i.__class__.__name__))
             if cached:
@@ -531,7 +542,7 @@ class PWSafe3(object):
         for record in self.records:
             if record['UUID'] == uuid:
                 return record['Password']
-        raise UUIDNotFoundError, "UUID %s was not found. " % repr(uuid)
+        raise UUIDNotFoundError("UUID %s was not found. " % repr(uuid))
 
     def __getitem__(self, *args, **kwargs):
         return self.records.__getitem__(*args, **kwargs)
@@ -787,7 +798,7 @@ class PWSafe3(object):
                     try:  # Check if the other proc is still alive
                         os.kill(pid, 0)  # @UndefinedVariable
                         log.info("Other process (PID: %r) is alive. Can't override lock for %r ", lpid, self)
-                        raise AlreadyLockedError, "Other process is alive. Can't override lock. "
+                        raise AlreadyLockedError("Other process is alive. Can't override lock. ")
                     except:
                         # Not really locked, remove stale lock
                         log.warning("Removing stale lock file of %r at %r", self, lfile)
@@ -795,10 +806,10 @@ class PWSafe3(object):
                         return self.lock()
                 else:
                     log.info("Lock file is for a different host (%r). Assuming %r is locked. ", lhostname, self)
-                    raise AlreadyLockedError, "Lock is on a different host. Can't try to unlock. "
+                    raise AlreadyLockedError("Lock is on a different host. Can't try to unlock. ")
             else:
                 log.info("Lock file contains invalid data: %r Assuming the safe, %r, is already locked. ", found, self)
-                raise AlreadyLockedError, "Lock file contains invalid data. Assuming the safe is already locked. "
+                raise AlreadyLockedError("Lock file contains invalid data. Assuming the safe is already locked. ")
         self.locked = lfile
 
         # Create the lock file with no race conditions
@@ -807,7 +818,7 @@ class PWSafe3(object):
             fd = os.open(lfile, os.O_CREAT | os.O_EXCL | os.O_RDWR)
             os.write(fd, self._get_lock_data())
             os.close(fd)
-        except OSError, e:
+        except OSError:
             log.info("%r reported as unlocked but can't create the lockfile", self)
             raise AlreadyLockedError
 
@@ -817,14 +828,14 @@ class PWSafe3(object):
         """
         if not self.locked:
             log.info("%r is not locked. Failing to unlock. ", self)
-            raise NotLockedError, "Not currently locked"
+            raise NotLockedError("Not currently locked")
         try:
             os.remove(self.locked)
             self.locked = False
             log.debug("%r for %r is unlocked", self.locked, self)
         except OSError:
             log.info("%r reported as locked but no lock file exists", self)
-            raise NotLockedError, "Obj reported as locked but no lock file exists"
+            raise NotLockedError("Obj reported as locked but no lock file exists")
 
     def forceUnlock(self):
         """ Try to unlock and remove the lock file by force. 
@@ -856,3 +867,4 @@ if __name__ == "__main__":
     import doctest
 
     doctest.testmod()
+

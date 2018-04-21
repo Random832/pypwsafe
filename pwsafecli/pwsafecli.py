@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #===============================================================================
 # This file is part of PyPWSafe.
 #
@@ -16,6 +16,7 @@
 # along with PyPWSafe. If not, see http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 #===============================================================================
 
+from __future__ import print_function
 import datetime
 from getpass import getpass
 import logging, logging.config
@@ -157,13 +158,13 @@ def show_records(records, attributes): # pragma: no cover
         attributes = VALID_ATTRIBUTES
 
     for record in records:
-        print "["
+        print("[")
         for i in attributes:
             attr = i
             if not i[0].isupper():
                 attr = attr.title()
-            print "    %s: %s" % (attr, get_record_attr(record, i))
-        print "]"
+            print("    %s: %s" % (attr, get_record_attr(record, i)))
+        print("]")
 
 
 def get_safe(filename, password): # pragma: no cover
@@ -202,7 +203,7 @@ def add_action(options): # pragma: no cover
     with Locked(safe):
         result = add_or_update_record(safe, None, options)
     if options.verbose:
-        print result
+        print(result)
 
 
 def delete_validator(options):
@@ -451,9 +452,9 @@ if __name__ == "__main__": # pragma: no cover
         options = parse_commandline(parsers, sys.argv)
 
         main(options)
-    except PWSafeCLIValidationError, e:
+    except PWSafeCLIValidationError as e:
         sys.stderr.write("%s\n" % e)
         sys.exit(1)
-    except PWSafeCLIError, e:
+    except PWSafeCLIError as e:
         sys.stderr.write("%s\n" % e)
         sys.exit(1)
