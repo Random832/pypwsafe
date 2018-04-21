@@ -355,6 +355,8 @@ K:V for opts:
                 ret += "S %d %s%s%s " % (conf_strs[name]['index'], delm, value, delm)
             else:
                 raise PrefsDataTypeError, "Unexpected record type for preferences %r" % typ
+        if ret.endswith(' '):
+            ret = ret[:-1]
         return ret
 
 
@@ -768,7 +770,7 @@ class NamedPasswordPoliciesHeader(Header):
             else:
                 allowedSpecialSymbols = policy.allowedSpecialSymbols
             name = policy.name.encode('utf-8')
-            ret += '%02x%s%04x%03x%03x%03x%03x%03x%s' % (
+            ret += '%02x%s%04x%03x%03x%03x%03x%03x%02x%s' % (
                 len(name),
                 name,
                 flags,
@@ -777,6 +779,7 @@ class NamedPasswordPoliciesHeader(Header):
                 policy.minUppercaseCharCount,
                 policy.minDigitCount,
                 policy.minSpecialCharCount,
+                len(allowedSpecialSymbols),
                 allowedSpecialSymbols,
             )
             # psafe_logger.debug("Serial to %s data %s"%(repr(ret),repr(self.data)))
@@ -898,8 +901,9 @@ class RecentEntriesHeader(Header):
         return "RecentEntriesHeader(%r)" % self.recentEntries
 
     def serial(self):
-        packed = [pack('=16s', str(uuid.bytes)) for uuid in self.recentEntries[:256]]
-        return ','.join(packed)
+        packed = ['%02x' % len(self.recentEntries[:255])]
+        packed.extend(uuid.hex for uuid in self.recentEntries[:255])
+        return ''.join(packed)
 
 
 class EmptyGroupHeader(Header):
