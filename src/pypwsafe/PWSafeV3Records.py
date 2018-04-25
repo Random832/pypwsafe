@@ -1144,20 +1144,20 @@ where:
     def serial(self):
         ret = b''
         if self.enabled:
-            ret += "1"
+            ret += b"1"
         else:
-            ret += "0"
-        ret += "%02x" % self.maxsize
-        ret += "%02x" % len(self.history)
+            ret += b"0"
+        ret += b"%02x" % self.maxsize
+        ret += b"%02x" % len(self.history)
         psafe_logger.debug("Pre-passwords %s" % repr(ret))
         for (tm, passwd) in self.history:
             passwd = passwd.encode('utf-8')
-            ret += "%08x" % calendar.timegm(tm)
-            ret += "%04x" % len(passwd)
+            ret += b"%08x" % calendar.timegm(tm)
+            ret += b"%04x" % len(passwd)
             ret += passwd
             psafe_logger.debug("Post-add password %s" % repr(ret))
         if len(self.history) == 0 and self.zerohack:
-            ret += "00"
+            ret += b"00"
         # psafe_logger.debug("Serial to %s data %s"%(repr(ret),repr(self.data)))
         return ret
 
@@ -1168,9 +1168,9 @@ where:
             self.zerohack = False
         if len(self.data) > 0:
             # Enabled/disabled
-            if self.data[0] == "0":
+            if self.data[0:1] == b"0":
                 self.enabled = False
-            elif self.data[0] == "1":
+            elif self.data[0:1] == b"1":
                 self.enabled = True
             else:
                 raise PropParsingError("Invalid enabled/disabled flag %s" % repr(self.data[0]))
