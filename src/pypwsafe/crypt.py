@@ -126,7 +126,7 @@ class TwofishECBCEncryption(object):
             self.twf.init(self.key)
             self.mode = 'Native (MCrypt)'
         except Exception as e:
-            self.log.warn("Failed to import native Twofish implementation with %r" % e)
+            #self.log.warn("Failed to import native Twofish implementation with %r" % e)
             self.log.debug("Falling back to pure-Python Twofish library")
             from twofish import Twofish
             self.mode = 'Pure-Python'
